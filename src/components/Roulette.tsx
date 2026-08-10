@@ -1,0 +1,158 @@
+import { useLayoutEffect, useRef } from 'react'
+// (useRef fuer stabile Callback-Refs, damit die Animation genau einmal laeuft)
+import type { Track } from '../spotify/types'
+import { easeOutWithSettle } from '../roulette/easing'
+import { playStop, playTick } from '../roulette/audio'
+import { AlbumCover } from './AlbumCover'
+
+interface RouletteProps {
+  /** Vorgebauter Strip; der Gewinner sitzt an `winnerIndex`. */
+  strip: Track[]
+  winnerIndex: number
+  soundEnabled: boolean
+  /** Wird aufgerufen, wenn die Animation vollstaendig gestoppt ist. */
+  onComplete: () => void
+}
+
+const DURATION_MS = 5000
+
+/**
+ * Das Herzstueck: eine deterministische, frame-rate-unabhaengige
+ * Case-Opening-artige Roulette-Animation.
+ *
+ * Der Gewinner steht vor dem Start fest (via winnerIndex). Die Animation
+ * berechnet die Zielposition, die den Gewinner exakt unter dem Marker
+ * zentriert, und faehrt per Quintic-Ease-Out (schnell -> langsam -> STOP)
+ * ueber ~5s dorthin. Da die Position aus der verstrichenen Zeit berechnet
+ * wird (nicht aus Frame-Inkrementen), landet IMMER derselbe Song –
+ * unabhaengig von der Bildwiederholrate.
+ */
+export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: RouletteProps) {
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  // Aktuellste Callback-/Flag-Werte in Refs halten, damit der Effekt NICHT
+  // von ihrer Identitaet abhaengt und die Animation genau EINMAL laeuft
+  // (kein Neustart bei Re-Renders des Parents).
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
+  const soundRef = useRef(soundEnabled)
+  soundRef.current = soundEnabled
+
+  useLayoutEffect(() => {
+    const viewport = viewportRef.current
+    const track = trackRef.current
+    if (!viewport || !track) return
+
+    const cards = Array.from(track.children) as HTMLElement[]
+    if (cards.length <= winnerIndex) return
+
+    // Defensive: evtl. Reste eines vorherigen Laufs entfernen.
+    for (const c of cards) c.classList.remove('is-center', 'is-winner')
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // Layout exakt aus dem DOM messen, damit die Mathematik immer passt.
+    const cardW = cards[0].offsetWidth
+    const step = cards.length > 1 ? cards[1].offsetLeft - cards[0].offsetLeft : cardW
+    const vpCenter = viewport.clientWidth / 2
+
+    // X-Verschiebung, die Karte `index` unter den Marker zentriert.
+    const centerToX = (index: number) => vpCenter - (cards[index].offsetLeft + cardW / 2)
+
+    const startIndex = Math.min(3, winnerIndex)
+    const startX = centerToX(startIndex)
+
+    // Dezenter Versatz (< halbe Karte), damit der Stop nicht steril
+    // immer pixelgenau mittig wirkt – der Gewinner bleibt klar unter dem Marker.
+    const jitter = (Math.random() - 0.5) * step * 0.28
+    const finalX = centerToX(winnerIndex) + jitter
+
+    const duration = reduceMotion ? 700 : DURATION_MS
+
+    // Startposition sofort setzen (useLayoutEffect -> kein Flash bei X=0).
+    track.style.transform = `translate3d(${startX}px, 0, 0)`
+
+    let rafId = 0
+    let timeoutId = 0
+    let startTs = 0
+    let lastCenter = -1
+
+    const setCenter = (idx: number) => {
+      if (idx === lastCenter) return
+      if (lastCenter >= 0) cards[lastCenter]?.classList.remove('is-center')
+      cards[idx]?.classList.add('is-center')
+      lastCenter = idx
+      if (soundRef.current && !reduceMotion) playTick()
+    }
+
+    const finish = () => {
+      // Zielposition exakt setzen und Gewinner hervorheben.
+      track.style.transform = `translate3d(${finalX}px, 0, 0)`
+      cards[lastCenter]?.classList.remove('is-center')
+      cards[winnerIndex]?.classList.add('is-center', 'is-winner')
+      if (soundRef.current) playStop()
+      timeoutId = window.setTimeout(() => onCompleteRef.current(), reduceMotion ? 300 : 850)
+    }
+
+    const frame = (ts: number) => {
+      if (!startTs) startTs = ts
+      const t = Math.min(1, (ts - startTs) / duration)
+      const eased = easeOutWithSettle(t)
+      const x = startX + (finalX - startX) * eased
+      track.style.transform = `translate3d(${x}px, 0, 0)`
+
+      // Karte, die gerade unter dem Marker liegt, hervorheben.
+      const idx = Math.round((vpCenter - x - cardW / 2) / step)
+      setCenter(Math.max(0, Math.min(cards.length - 1, idx)))
+
+      if (t < 1) {
+        rafId = requestAnimationFrame(frame)
+      } else {
+        finish()
+      }
+    }
+
+    rafId = requestAnimationFrame(frame)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+      window.clearTimeout(timeoutId)
+    }
+    // Bewusst nur [strip, winnerIndex]: die Animation soll pro Ziehung
+    // genau einmal starten. soundEnabled/onComplete werden ueber Refs gelesen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strip, winnerIndex])
+
+  return (
+    <section className="stage stage-center roulette fade-in">
+      <p className="roulette-hint">Welcher Song kommt?</p>
+
+      <div className="roulette-viewport" ref={viewportRef}>
+        {/* Fester Marker in der Mitte */}
+        <div className="roulette-marker" aria-hidden="true">
+          <span className="marker-top" />
+          <span className="marker-line" />
+          <span className="marker-bottom" />
+        </div>
+
+        {/* Randverlauf fuer Tiefe */}
+        <div className="roulette-fade roulette-fade-left" aria-hidden="true" />
+        <div className="roulette-fade roulette-fade-right" aria-hidden="true" />
+
+        {/* Beweglicher Karten-Track */}
+        <div className="roulette-track" ref={trackRef}>
+          {strip.map((track, i) => (
+            <article className="song-card" key={i}>
+              <AlbumCover url={track.coverUrl} alt={track.title} className="song-card-cover" />
+              <div className="song-card-info">
+                <span className="song-card-title">{track.title}</span>
+                <span className="song-card-artist">{track.artist}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
