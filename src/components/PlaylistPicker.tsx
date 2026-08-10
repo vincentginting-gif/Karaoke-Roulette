@@ -35,8 +35,19 @@ export function PlaylistPicker({ playlists, loading, onSelect, onCancel }: Playl
         <ul className="playlist-grid">
           {playlists.map((pl) => (
             <li key={pl.id}>
-              <button className="playlist-card" onClick={() => onSelect(pl)}>
-                <AlbumCover url={pl.imageUrl} alt={pl.name} className="playlist-cover" />
+              <button
+                className={`playlist-card${pl.isOwn ? '' : ' playlist-card-foreign'}`}
+                onClick={() => onSelect(pl)}
+                title={
+                  pl.isOwn
+                    ? pl.name
+                    : `${pl.name} – von Spotify erstellt, ueber die API evtl. nicht ladbar`
+                }
+              >
+                <div className="playlist-cover-wrap">
+                  <AlbumCover url={pl.imageUrl} alt={pl.name} className="playlist-cover" />
+                  {!pl.isOwn && <span className="playlist-badge">Spotify</span>}
+                </div>
                 <div className="playlist-info">
                   <span className="playlist-name">{pl.name}</span>
                   <span className="playlist-count">

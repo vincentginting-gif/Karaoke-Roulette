@@ -424,10 +424,33 @@ code {
   border-color: var(--border-strong);
   box-shadow: var(--shadow);
 }
+.playlist-cover-wrap {
+  position: relative;
+  width: 100%;
+}
 .playlist-cover {
   width: 100%;
   aspect-ratio: 1;
   border-radius: 10px;
+}
+.playlist-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #d6ffe4;
+  background: rgba(29, 185, 84, 0.85);
+  backdrop-filter: blur(4px);
+}
+.playlist-card-foreign {
+  opacity: 0.72;
+}
+.playlist-card-foreign:hover {
+  opacity: 1;
 }
 .playlist-info {
   display: flex;

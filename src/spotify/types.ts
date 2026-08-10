@@ -9,6 +9,10 @@ export interface Playlist {
   imageUrl: string | null
   trackCount: number
   ownerName: string
+  /** Spotify-User-ID des Besitzers (z. B. "spotify" fuer Spotify-eigene Listen). */
+  ownerId: string
+  /** true, wenn die Liste dem angemeldeten Nutzer gehoert (via Web API ladbar). */
+  isOwn: boolean
 }
 
 /** Ein Karaoke-Song. Das ist die zentrale Datenstruktur der App. */
@@ -43,7 +47,7 @@ export interface SpotifyRawPlaylist {
   name: string
   images: SpotifyImage[] | null
   tracks: { total: number }
-  owner: { display_name: string | null }
+  owner: { display_name: string | null; id: string }
 }
 
 export interface SpotifyRawTrack {

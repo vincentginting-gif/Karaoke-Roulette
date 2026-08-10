@@ -181,6 +181,34 @@ lebendig statt steril wirkt.
 
 ---
 
+## 🛠️ Troubleshooting
+
+### „Spotify-Anfrage fehlgeschlagen (Status 403)“ beim Song auswählen
+
+Das passiert, wenn die gewählte Playlist **von Spotify erstellt** wurde
+(Discover Weekly, Daily Mix, Release Radar, „Radio“- und Editorial-Playlists).
+Seit November 2024 lassen sich diese **nicht mehr über die Web API laden** – Spotify
+antwortet mit 403/404.
+
+**Lösung:** Wähle eine Playlist, die **du selbst erstellt** hast. Im Playlist-Picker
+stehen deine eigenen Listen oben; von Spotify erstellte sind mit einem grünen
+**„Spotify“**-Badge markiert und funktionieren nicht.
+
+> Tipp: Lege in Spotify eine eigene Playlist „Karaoke“ an und füge ein paar Songs
+> hinzu – die funktioniert garantiert.
+
+### 403 bei **allen** (auch eigenen) Playlists
+
+Dann ist dein Account vermutlich noch nicht für die App freigeschaltet
+(Development Mode). Im **[Dashboard](https://developer.spotify.com/dashboard)** →
+deine App → **User Management** → deinen Spotify-Namen + E-Mail hinzufügen, dann in der
+App **„Spotify trennen“** und neu verbinden.
+
+> Die Browser-Konsole (F12) zeigt bei API-Fehlern die genaue URL und Antwort von
+> Spotify – hilfreich zur Eingrenzung.
+
+---
+
 ## 🗃️ Datenspeicherung
 
 Alles bleibt lokal im Browser (`localStorage`):

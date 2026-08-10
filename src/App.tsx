@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { isConfigured } from './spotify/auth'
-import { ApiError, fetchPlaylists, fetchPlaylistTracks } from './spotify/api'
+import { ApiError, fetchCurrentUserId, fetchPlaylists, fetchPlaylistTracks } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
 import {
   loadActivePlaylist,
@@ -41,6 +41,9 @@ export function App() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [tracksLoading, setTracksLoading] = useState(false)
 
+  // Eigene Spotify-User-ID (fuer Besitz-Erkennung der Playlists)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
   // No-Repeat-Zustand
   const [drawnIds, setDrawnIds] = useState<Set<string>>(new Set())
   const [lastWinnerId, setLastWinnerId] = useState<string | null>(null)
@@ -61,9 +64,10 @@ export function App() {
     if (auth.error) setError(auth.error)
   }, [auth.error])
 
-  // ── Bei Verbindung: zuletzt genutzte Playlist wiederherstellen ──
+  // ── Bei Verbindung: eigene User-ID holen + letzte Playlist wiederherstellen ──
   useEffect(() => {
     if (auth.status === 'connected') {
+      void fetchCurrentUserId().then((id) => setCurrentUserId(id))
       const saved = loadActivePlaylist()
       if (saved) {
         setActivePlaylist(saved)
@@ -81,7 +85,7 @@ export function App() {
       setTracksLoading(true)
       setError(null)
       try {
-        const loaded = await fetchPlaylistTracks(pl.id)
+        const loaded = await fetchPlaylistTracks(pl)
         if (cancelled) return
         setTracks(loaded)
         if (loaded.length === 0) {
@@ -117,7 +121,10 @@ export function App() {
     setPlaylistsLoading(true)
     setError(null)
     try {
-      const pls = await fetchPlaylists()
+      // Eigene User-ID sicherstellen (falls noch nicht geladen).
+      const uid = currentUserId ?? (await fetchCurrentUserId())
+      if (uid && uid !== currentUserId) setCurrentUserId(uid)
+      const pls = await fetchPlaylists(uid)
       setPlaylists(pls)
     } catch (e) {
       handleApiError(e)
@@ -125,7 +132,7 @@ export function App() {
       setPlaylistsLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [currentUserId])
 
   const openPicker = useCallback(() => {
     setView('picker')

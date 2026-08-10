@@ -21,6 +21,8 @@ export class ApiError extends Error {
     message: string,
     /** true, wenn die Sitzung ungueltig ist und ein neuer Login noetig ist. */
     public readonly needsReauth = false,
+    /** HTTP-Status (0 = Netzwerkfehler), fuer gezielte Behandlung. */
+    public readonly status = 0,
   ) {
     super(message)
     this.name = 'ApiError'
@@ -45,21 +47,44 @@ async function apiFetch<T>(path: string): Promise<T> {
     throw new ApiError('Netzwerkfehler bei der Verbindung zu Spotify.')
   }
 
+  if (res.ok) {
+    return (await res.json()) as T
+  }
+
+  // Fuer die Diagnose die Antwort des Servers mitloggen (hilft bei 403 etc.).
+  const bodyText = await res.text().catch(() => '')
+  console.warn('[Spotify API] Fehler', res.status, path, bodyText.slice(0, 300))
+
   if (res.status === 401) {
-    // Token doch ungueltig -> Sitzung verwerfen.
+    // Token ungueltig -> Sitzung verwerfen.
     clearTokens()
-    throw new ApiError('Sitzung abgelaufen. Bitte erneut mit Spotify verbinden.', true)
+    throw new ApiError('Sitzung abgelaufen. Bitte erneut mit Spotify verbinden.', true, 401)
   }
-
+  if (res.status === 403) {
+    throw new ApiError('Zugriff von Spotify verweigert (403).', false, 403)
+  }
+  if (res.status === 404) {
+    throw new ApiError('Ressource bei Spotify nicht gefunden (404).', false, 404)
+  }
   if (res.status === 429) {
-    throw new ApiError('Zu viele Anfragen an Spotify. Bitte kurz warten und erneut versuchen.')
+    throw new ApiError(
+      'Zu viele Anfragen an Spotify. Bitte kurz warten und erneut versuchen.',
+      false,
+      429,
+    )
   }
+  throw new ApiError(`Spotify-Anfrage fehlgeschlagen (Status ${res.status}).`, false, res.status)
+}
 
-  if (!res.ok) {
-    throw new ApiError(`Spotify-Anfrage fehlgeschlagen (Status ${res.status}).`)
+/** Liefert die Spotify-User-ID des angemeldeten Nutzers (fuer Besitz-Erkennung). */
+export async function fetchCurrentUserId(): Promise<string | null> {
+  try {
+    const me = await apiFetch<{ id: string }>('/me')
+    return me.id ?? null
+  } catch {
+    // Nicht kritisch – Besitz-Erkennung ist nur ein Komfort-Feature.
+    return null
   }
-
-  return (await res.json()) as T
 }
 
 /** Waehlt das erste (groesste) Bild aus einer Spotify-Image-Liste. */
@@ -71,8 +96,9 @@ function firstImageUrl(images: { url: string }[] | null | undefined): string | n
 
 /**
  * Laedt alle Playlists des angemeldeten Nutzers (mit Pagination).
+ * @param currentUserId eigene User-ID, um "eigene" Playlists zu markieren.
  */
-export async function fetchPlaylists(): Promise<Playlist[]> {
+export async function fetchPlaylists(currentUserId: string | null): Promise<Playlist[]> {
   const playlists: Playlist[] = []
   let url: string | null = '/me/playlists?limit=50'
 
@@ -82,12 +108,16 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
     for (const raw of page.items) {
       // Spotify kann in seltenen Faellen null-Eintraege liefern.
       if (!raw || !raw.id) continue
+      const ownerId = raw.owner?.id ?? ''
       playlists.push({
         id: raw.id,
         name: raw.name || 'Unbenannte Playlist',
         imageUrl: firstImageUrl(raw.images),
         trackCount: raw.tracks?.total ?? 0,
         ownerName: raw.owner?.display_name ?? '',
+        ownerId,
+        // Ohne bekannte User-ID: nur Spotify-eigene Listen als "nicht eigen" werten.
+        isOwn: currentUserId ? ownerId === currentUserId : ownerId !== 'spotify',
       })
     }
 
@@ -95,6 +125,8 @@ export async function fetchPlaylists(): Promise<Playlist[]> {
     url = page.next ? page.next.replace(API_BASE, '') : null
   }
 
+  // Eigene Playlists zuerst (die sind ueber die API zuverlaessig ladbar).
+  playlists.sort((a, b) => Number(b.isOwn) - Number(a.isOwn))
   return playlists
 }
 
@@ -107,36 +139,64 @@ interface PlaylistItem {
 /**
  * Laedt alle spielbaren Tracks einer Playlist (mit Pagination).
  * Filtert lokale Dateien und ungueltige Eintraege heraus.
+ *
+ * Bei 403/404 (typisch fuer Spotify-eigene/algorithmische Playlists, die seit
+ * Nov. 2024 nicht mehr ueber die API zugaenglich sind) wird eine klare,
+ * handlungsleitende Meldung geworfen.
  */
-export async function fetchPlaylistTracks(playlistId: string): Promise<Track[]> {
+export async function fetchPlaylistTracks(playlist: Playlist): Promise<Track[]> {
   const tracks: Track[] = []
   // Nur die benoetigten Felder anfordern (schneller, weniger Daten).
   const fields =
     'items(track(id,name,artists(name),album(images),external_urls,is_local,type)),next'
   let url: string | null =
-    `/playlists/${playlistId}/tracks?limit=100&fields=${encodeURIComponent(fields)}`
+    `/playlists/${playlist.id}/tracks?limit=100&fields=${encodeURIComponent(fields)}`
 
-  while (url) {
-    const page: SpotifyPagingResponse<PlaylistItem> = await apiFetch(url)
+  try {
+    while (url) {
+      const page: SpotifyPagingResponse<PlaylistItem> = await apiFetch(url)
 
-    for (const item of page.items) {
-      const t = item?.track
-      // Ungueltige, lokale oder nicht abspielbare Eintraege ueberspringen.
-      if (!t || !t.id || t.is_local || t.type === 'episode') continue
+      for (const item of page.items) {
+        const t = item?.track
+        // Ungueltige, lokale oder nicht abspielbare Eintraege ueberspringen.
+        if (!t || !t.id || t.is_local || t.type === 'episode') continue
 
-      const spotifyUrl =
-        t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`
+        const spotifyUrl =
+          t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`
 
-      tracks.push({
-        id: t.id,
-        title: t.name || 'Unbekannter Titel',
-        artist: t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
-        coverUrl: firstImageUrl(t.album?.images),
-        spotifyUrl,
-      })
+        tracks.push({
+          id: t.id,
+          title: t.name || 'Unbekannter Titel',
+          artist:
+            t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
+          coverUrl: firstImageUrl(t.album?.images),
+          spotifyUrl,
+        })
+      }
+
+      url = page.next ? page.next.replace(API_BASE, '') : null
     }
-
-    url = page.next ? page.next.replace(API_BASE, '') : null
+  } catch (e) {
+    // 403/404 bei Spotify-eigenen Listen -> praezise Meldung.
+    if (e instanceof ApiError && (e.status === 403 || e.status === 404)) {
+      if (!playlist.isOwn) {
+        throw new ApiError(
+          `»${playlist.name}« wurde von Spotify erstellt (z. B. Discover Weekly, ` +
+            `Daily Mix, Radio, Editorial) und kann seit Nov. 2024 nicht mehr ueber die ` +
+            `API geladen werden. Bitte waehle eine Playlist, die du selbst erstellt hast.`,
+          false,
+          e.status,
+        )
+      }
+      throw new ApiError(
+        `»${playlist.name}« konnte nicht geladen werden (${e.status}). Falls das bei allen ` +
+          `Playlists passiert: Ist dein Account im Spotify-Dashboard unter „User Management“ ` +
+          `hinzugefuegt? Danach „Spotify trennen“ und neu verbinden.`,
+        false,
+        e.status,
+      )
+    }
+    throw e
   }
 
   return tracks
