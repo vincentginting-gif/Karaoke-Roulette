@@ -131,11 +131,24 @@ export function isAuthCallback(): boolean {
   return params.has('code') || params.has('error')
 }
 
+// Merkt sich den laufenden/erledigten Code-Austausch. Verhindert, dass der
+// Spotify-Autorisierungs-Code (nur EINMAL verwendbar) doppelt eingeloest wird –
+// z. B. durch das doppelte Ausfuehren von Effects im React StrictMode (Dev).
+let callbackPromise: Promise<void> | null = null
+
 /**
  * Verarbeitet den OAuth-Callback: tauscht den Code gegen Tokens.
+ * Idempotent – mehrfaches Aufrufen loest denselben Austausch nur einmal aus.
  * Wirft AuthError bei Fehlern. Nach Erfolg sind Tokens gespeichert.
  */
-export async function handleCallback(): Promise<void> {
+export function handleCallback(): Promise<void> {
+  if (!callbackPromise) {
+    callbackPromise = exchangeCodeForTokens()
+  }
+  return callbackPromise
+}
+
+async function exchangeCodeForTokens(): Promise<void> {
   const params = new URLSearchParams(window.location.search)
 
   const error = params.get('error')
@@ -171,7 +184,21 @@ export async function handleCallback(): Promise<void> {
   }
 
   if (!res.ok) {
-    throw new AuthError('Token-Austausch mit Spotify fehlgeschlagen.')
+    // Echten Spotify-Fehler fuer die Diagnose ausgeben.
+    const bodyText = await res.text().catch(() => '')
+    console.error('[Spotify Auth] Token-Austausch fehlgeschlagen', res.status, bodyText)
+    let hint = ''
+    if (bodyText.includes('invalid_grant')) {
+      hint =
+        ' (Code bereits benutzt oder abgelaufen – bitte Login einfach erneut starten.)'
+    } else if (bodyText.includes('redirect_uri')) {
+      hint =
+        ' (Redirect-URI stimmt nicht mit dem Spotify-Dashboard ueberein – ' +
+        'http://127.0.0.1:5173/callback muss dort exakt eingetragen sein.)'
+    } else if (bodyText.includes('invalid_client')) {
+      hint = ' (Client-ID falsch – VITE_SPOTIFY_CLIENT_ID pruefen.)'
+    }
+    throw new AuthError(`Token-Austausch mit Spotify fehlgeschlagen${hint}`)
   }
 
   const data = await res.json()
