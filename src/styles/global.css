@@ -21,8 +21,8 @@
 
   --spotify: #1db954;
 
-  --card-w: 176px;      /* wird per Media-Query angepasst; JS misst real */
-  --card-gap: 18px;
+  --card-w: 212px;      /* wird per Media-Query angepasst; JS misst real */
+  --card-gap: 20px;
 
   --radius: 18px;
   --radius-sm: 12px;
@@ -784,8 +784,8 @@ code {
 
 @media (max-width: 640px) {
   :root {
-    --card-w: 128px;
-    --card-gap: 12px;
+    --card-w: 152px;
+    --card-gap: 14px;
   }
   .app-main {
     padding: 8px 16px 40px;
