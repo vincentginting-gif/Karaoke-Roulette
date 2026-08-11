@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
 // (useRef fuer stabile Callback-Refs, damit die Animation genau einmal laeuft)
 import type { Track } from '../spotify/types'
-import { easeOutQuint } from '../roulette/easing'
-import { playStop, playTick } from '../roulette/audio'
+import { easeOutCase } from '../roulette/easing'
+import { playStart, playStop, playTick } from '../roulette/audio'
 import { AlbumCover } from './AlbumCover'
 
 interface RouletteProps {
@@ -14,7 +14,7 @@ interface RouletteProps {
   onComplete: () => void
 }
 
-const DURATION_MS = 5000
+const DURATION_MS = 5800
 
 /**
  * Das Herzstueck: eine deterministische, frame-rate-unabhaengige
@@ -99,7 +99,7 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
     const frame = (ts: number) => {
       if (!startTs) startTs = ts
       const t = Math.min(1, (ts - startTs) / duration)
-      const eased = easeOutQuint(t)
+      const eased = easeOutCase(t)
       const x = startX + (finalX - startX) * eased
       track.style.transform = `translate3d(${x}px, 0, 0)`
 
@@ -113,6 +113,9 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
         finish()
       }
     }
+
+    // Start-Whoosh (nur mit Ton und ohne reduzierte Bewegung).
+    if (soundRef.current && !reduceMotion) playStart()
 
     rafId = requestAnimationFrame(frame)
 

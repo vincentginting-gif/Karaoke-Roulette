@@ -20,3 +20,17 @@ export function easeOutQuint(t: number): number {
   const clamped = Math.min(1, Math.max(0, t))
   return 1 - Math.pow(1 - clamped, 5)
 }
+
+/**
+ * Easing im Stil eines CS:GO-"Case Opening":
+ * schneller, verwischter Start, dann ein langer, gleichmaessiger Auslauf, bei
+ * dem die Karten (und damit die Tick-Sounds) immer weiter auseinander driften –
+ * bis der Gewinner unter dem Marker einrastet. Monoton, kein Zurueckfedern.
+ *
+ * Potenz 2.4 ist bewusst gewaehlt: hoch genug fuer den "Whoosh"-Start, aber
+ * flach genug, dass die letzten Ticks einzeln hoerbar langsamer werden.
+ */
+export function easeOutCase(t: number): number {
+  const clamped = Math.min(1, Math.max(0, t))
+  return 1 - Math.pow(1 - clamped, 2.4)
+}
