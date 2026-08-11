@@ -15,7 +15,9 @@ Case-Opening-artigen **Roulette-Animation** präsentiert.
   **kein Backend, kein Client Secret**.
 - **Playlist-Auswahl** aus deinen eigenen Spotify-Playlists (mit Cover & Songzahl).
 - **Entdecken-Modus:** Songs aus dem gesamten Spotify-Katalog nach **Genre**
-  (Pop, HipHop, Jazz …) und **Beliebtheit** (Regler 0–100) – ohne eigene Playlist.
+  (Pop, HipHop, Jazz …) – ohne eigene Playlist. (Ein Beliebtheits-Filter wäre
+  möglich, benötigt aber Spotifys „Extended Quota Mode“ – im Development Mode
+  liefert Spotify keine `popularity`-Werte.)
 - **Deterministische Roulette-Animation** (~6 s, 60 fps) im Stil eines Case-Openings:
   Der Gewinner steht *vor* dem Start fest, die Animation läuft sanft darauf zu und
   landet exakt unter dem Marker – unabhängig von Frame-Rate oder Timing.

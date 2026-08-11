@@ -38,9 +38,9 @@ import { GearIcon } from './components/icons'
 type View = 'home' | 'picker' | 'discover' | 'roulette' | 'result' | 'manage'
 
 /** Baut eine synthetische "Playlist" fuer eine Entdecken-Auswahl. */
-function makeDiscoverPlaylist(genre: Genre, minPop: number): Playlist {
+function makeDiscoverPlaylist(genre: Genre): Playlist {
   return {
-    id: `discover:${genre.query}:${minPop}`,
+    id: `discover:${genre.query}`,
     name: `${genre.emoji} ${genre.label}`,
     imageUrl: null,
     trackCount: 0,
@@ -214,9 +214,9 @@ export function App() {
     setView('home')
   }, [])
 
-  // ── Entdecken: Genre + Beliebtheit als Quelle waehlen ──
-  const selectDiscover = useCallback((genre: Genre, minPop: number) => {
-    const pl = makeDiscoverPlaylist(genre, minPop)
+  // ── Entdecken: Genre als Quelle waehlen ──
+  const selectDiscover = useCallback((genre: Genre) => {
+    const pl = makeDiscoverPlaylist(genre)
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
     setDrawnIds(loadDrawnIds(pl.id))
