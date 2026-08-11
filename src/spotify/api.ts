@@ -229,19 +229,22 @@ export async function searchTracksByGenre(
   genreQuery: string,
   minPopularity: number,
 ): Promise<Track[]> {
-  // Erst die passende Query auf Seite 0 ermitteln: bevorzugt exakter
-  // Genre-Filter, bei 400 (nicht unterstuetzt) freie Suche.
-  let query = `genre:"${genreQuery}"`
-  let firstPage: SpotifySearchResponse
-  try {
-    firstPage = await searchTrackPage(query, 0)
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 400) {
-      query = genreQuery
-      firstPage = await searchTrackPage(query, 0) // freie Suche als Fallback
-    } else {
+  // Seite 0 mit einer Query holen; bei 400 (Filter nicht unterstuetzt) -> null.
+  const tryFirst = async (q: string): Promise<SpotifySearchResponse | null> => {
+    try {
+      return await searchTrackPage(q, 0)
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 400) return null
       throw e
     }
+  }
+
+  // 1) Genre-Filter versuchen. 2) Wenn Fehler ODER leer -> freie Suche.
+  let query = `genre:"${genreQuery}"`
+  let firstPage = await tryFirst(query)
+  if (!firstPage || (firstPage.tracks?.items?.length ?? 0) === 0) {
+    query = genreQuery
+    firstPage = await searchTrackPage(query, 0) // freie Suche; Fehler propagieren
   }
 
   // Restliche Seiten parallel holen (fehlertolerant).
@@ -250,18 +253,38 @@ export async function searchTracksByGenre(
       searchTrackPage(query, (i + 1) * SEARCH_PAGE_SIZE),
     ),
   )
-
   const pages: SpotifySearchResponse[] = [firstPage]
   for (const r of rest) if (r.status === 'fulfilled') pages.push(r.value)
 
-  // Zusammenfuehren, nach Beliebtheit filtern, deduplizieren.
+  // Roh-Treffer sammeln + nach Beliebtheit filtern (dedupliziert).
+  let rawCount = 0
   const collected = new Map<string, Track>()
   for (const page of pages) {
     for (const t of page.tracks?.items ?? []) {
       if (!isUsableTrack(t)) continue
+      rawCount++
       if ((t.popularity ?? 0) < minPopularity) continue
       if (!collected.has(t.id as string)) collected.set(t.id as string, mapTrack(t))
     }
+  }
+
+  console.info(
+    `[Entdecken] Query "${query}" – Roh-Treffer: ${rawCount}, nach Beliebtheit ≥${minPopularity}: ${collected.size}`,
+  )
+
+  // Klar unterscheiden, WARUM nichts uebrig blieb.
+  if (collected.size === 0) {
+    if (rawCount > 0) {
+      throw new ApiError(
+        `Für „${genreQuery}“ gibt es Treffer, aber keine mit Beliebtheit ≥ ${minPopularity}. ` +
+          `Zieh den Beliebtheits-Regler weiter nach unten.`,
+      )
+    }
+    throw new ApiError(
+      'Spotify liefert für diese App keine Katalog-Suchergebnisse. Das ist eine ' +
+        'Einschränkung des Development Mode – der Entdecken-Modus benötigt „Extended ' +
+        'Quota Mode“ (im Spotify-Dashboard beantragbar). Playlists funktionieren weiter.',
+    )
   }
 
   return [...collected.values()]
