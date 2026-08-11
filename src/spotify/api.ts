@@ -256,38 +256,51 @@ export async function searchTracksByGenre(
   const pages: SpotifySearchResponse[] = [firstPage]
   for (const r of rest) if (r.status === 'fulfilled') pages.push(r.value)
 
-  // Roh-Treffer sammeln + nach Beliebtheit filtern (dedupliziert).
-  let rawCount = 0
-  const collected = new Map<string, Track>()
+  // Alle Roh-Treffer + die nach Beliebtheit gefilterten sammeln (dedupliziert).
+  const allRaw = new Map<string, Track>()
+  const filtered = new Map<string, Track>()
+  let withPopularity = 0
+  let maxPopularity = 0
+
   for (const page of pages) {
     for (const t of page.tracks?.items ?? []) {
       if (!isUsableTrack(t)) continue
-      rawCount++
-      if ((t.popularity ?? 0) < minPopularity) continue
-      if (!collected.has(t.id as string)) collected.set(t.id as string, mapTrack(t))
+      const id = t.id as string
+      if (!allRaw.has(id)) allRaw.set(id, mapTrack(t))
+      if (typeof t.popularity === 'number') {
+        withPopularity++
+        if (t.popularity > maxPopularity) maxPopularity = t.popularity
+      }
+      if ((t.popularity ?? 0) >= minPopularity && !filtered.has(id)) {
+        filtered.set(id, mapTrack(t))
+      }
     }
   }
 
   console.info(
-    `[Entdecken] Query "${query}" – Roh-Treffer: ${rawCount}, nach Beliebtheit ≥${minPopularity}: ${collected.size}`,
+    `[Entdecken] Query "${query}" – Roh: ${allRaw.size}, mit Popularity: ${withPopularity}, ` +
+      `maxPop: ${maxPopularity}, nach Beliebtheit ≥${minPopularity}: ${filtered.size}`,
   )
 
-  // Klar unterscheiden, WARUM nichts uebrig blieb.
-  if (collected.size === 0) {
-    if (rawCount > 0) {
-      throw new ApiError(
-        `Für „${genreQuery}“ gibt es Treffer, aber keine mit Beliebtheit ≥ ${minPopularity}. ` +
-          `Zieh den Beliebtheits-Regler weiter nach unten.`,
-      )
-    }
+  if (filtered.size > 0) return [...filtered.values()]
+
+  // Nichts nach Filter – Ursache unterscheiden:
+  if (allRaw.size > 0 && withPopularity === 0) {
+    // Spotify liefert fuer diese App keine Beliebtheit -> Filter ignorieren.
+    console.info('[Entdecken] Keine Beliebtheits-Daten verfügbar – Regler wird ignoriert.')
+    return [...allRaw.values()]
+  }
+  if (allRaw.size > 0) {
     throw new ApiError(
-      'Spotify liefert für diese App keine Katalog-Suchergebnisse. Das ist eine ' +
-        'Einschränkung des Development Mode – der Entdecken-Modus benötigt „Extended ' +
-        'Quota Mode“ (im Spotify-Dashboard beantragbar). Playlists funktionieren weiter.',
+      `Für „${genreQuery}“ gibt es Treffer, aber keine mit Beliebtheit ≥ ${minPopularity}. ` +
+        `Zieh den Beliebtheits-Regler weiter nach unten.`,
     )
   }
-
-  return [...collected.values()]
+  throw new ApiError(
+    'Spotify liefert für diese App keine Katalog-Suchergebnisse. Das ist eine ' +
+      'Einschränkung des Development Mode – der Entdecken-Modus benötigt „Extended ' +
+      'Quota Mode“ (im Spotify-Dashboard beantragbar). Playlists funktionieren weiter.',
+  )
 }
 
 /** Wandelt einen Fehler beim Track-Laden in eine klare, handlungsleitende Meldung. */
