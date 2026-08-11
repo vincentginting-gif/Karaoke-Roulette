@@ -6,6 +6,7 @@ import {
   fetchCurrentUserId,
   fetchPlaylists,
   fetchPlaylistTracks,
+  searchTracksByArtist,
   searchTracksByGenre,
 } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
@@ -13,9 +14,11 @@ import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
   loadActivePlaylist,
+  loadArtistNames,
   loadDrawnIds,
   loadExcludedIds,
   saveActivePlaylist,
+  saveArtistNames,
   saveDrawnIds,
   saveExcludedIds,
 } from './storage/storage'
@@ -33,14 +36,18 @@ import { ErrorToast } from './components/ErrorToast'
 import { SettingsPanel } from './components/SettingsPanel'
 import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
+import { ArtistPicker } from './components/ArtistPicker'
 import { GearIcon } from './components/icons'
 
-type View = 'home' | 'picker' | 'discover' | 'roulette' | 'result' | 'manage'
+type View = 'home' | 'picker' | 'discover' | 'artist' | 'roulette' | 'result' | 'manage'
+
+const DISCOVER_PREFIX = 'discover:'
+const ARTIST_PREFIX = 'artist:'
 
 /** Baut eine synthetische "Playlist" für eine Entdecken-Auswahl. */
 function makeDiscoverPlaylist(genre: Genre): Playlist {
   return {
-    id: `discover:${genre.query}`,
+    id: `${DISCOVER_PREFIX}${genre.query}`,
     name: `${genre.emoji} ${genre.label}`,
     imageUrl: null,
     trackCount: 0,
@@ -50,7 +57,18 @@ function makeDiscoverPlaylist(genre: Genre): Playlist {
   }
 }
 
-const DISCOVER_PREFIX = 'discover:'
+/** Baut eine synthetische "Playlist" für eine Artist-Auswahl. */
+function makeArtistPlaylist(names: string[]): Playlist {
+  return {
+    id: `${ARTIST_PREFIX}${names.join('|')}`,
+    name: names.length === 1 ? `🎙️ ${names[0]}` : `🎙️ ${names.length} Artists`,
+    imageUrl: null,
+    trackCount: 0,
+    ownerName: names.join(', '),
+    ownerId: '',
+    isOwn: true,
+  }
+}
 
 const SOUND_KEY = 'kr.sound.enabled'
 const SURPRISE_KEY = 'kr.surprise.enabled'
@@ -93,6 +111,9 @@ export function App() {
   )
   const [settingsOpen, setSettingsOpen] = useState(false)
 
+  // Zuletzt genutzte Artists (Artist-Modus)
+  const [artistNames, setArtistNames] = useState<string[]>(() => loadArtistNames())
+
   // Ziehbarer Pool = alle Tracks ohne die manuell entfernten.
   const pool = useMemo(() => tracks.filter((t) => !excludedIds.has(t.id)), [tracks, excludedIds])
 
@@ -129,11 +150,12 @@ export function App() {
         if (cancelled) return
         setTracks(loaded)
         if (loaded.length === 0) {
-          showError(
-            pl.id.startsWith(DISCOVER_PREFIX)
-              ? 'Keine Songs für dieses Genre mit dieser Beliebtheit gefunden. Versuch eine niedrigere Beliebtheit.'
-              : 'Diese Playlist enthält keine abspielbaren Songs. Bitte eine andere wählen.',
-          )
+          let msg = 'Diese Playlist enthält keine abspielbaren Songs. Bitte eine andere wählen.'
+          if (pl.id.startsWith(ARTIST_PREFIX))
+            msg = 'Für diese Artists wurden keine Songs gefunden. Prüfe die Schreibweise.'
+          else if (pl.id.startsWith(DISCOVER_PREFIX))
+            msg = 'Keine Songs für dieses Genre gefunden. Versuch ein anderes Genre.'
+          showError(msg)
         }
       } catch (e) {
         if (cancelled) return
@@ -160,11 +182,15 @@ export function App() {
     }
   }
 
-  /** Lädt Tracks je nach Quelle: echte Playlist oder Entdecken (Suche). */
+  /** Lädt Tracks je nach Quelle: Playlist, Entdecken (Genre) oder Artist. */
   function loadTracksFor(pl: Playlist): Promise<Track[]> {
+    if (pl.id.startsWith(ARTIST_PREFIX)) {
+      // Namen aus dem Storage (mit der aktiven Artist-Playlist gespeichert).
+      return searchTracksByArtist(loadArtistNames())
+    }
     if (pl.id.startsWith(DISCOVER_PREFIX)) {
-      const [, query = '', minPop = '0'] = pl.id.split(':')
-      return searchTracksByGenre(query, Number(minPop))
+      const query = pl.id.slice(DISCOVER_PREFIX.length)
+      return searchTracksByGenre(query, 0)
     }
     return fetchPlaylistTracks(pl)
   }
@@ -223,6 +249,19 @@ export function App() {
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
     setView('home') // Home zeigt den Spinner, während die Suche lädt
+  }, [])
+
+  // ── Artist-Modus: Artists als Quelle wählen ──
+  const selectArtists = useCallback((names: string[]) => {
+    setArtistNames(names)
+    saveArtistNames(names) // vor dem Laden speichern (loadTracksFor liest sie)
+    const pl = makeArtistPlaylist(names)
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    setView('home')
   }, [])
 
   // ── Song ziehen (Roulette starten) ──
@@ -328,6 +367,15 @@ export function App() {
         onCancel={() => setView('picker')}
       />
     )
+  } else if (view === 'artist') {
+    content = (
+      <ArtistPicker
+        loading={tracksLoading}
+        initialArtists={artistNames}
+        onStart={selectArtists}
+        onCancel={() => setView('picker')}
+      />
+    )
   } else if (view === 'picker' || !activePlaylist) {
     content = (
       <PlaylistPicker
@@ -335,6 +383,7 @@ export function App() {
         loading={playlistsLoading}
         onSelect={selectPlaylist}
         onDiscover={() => setView('discover')}
+        onArtists={() => setView('artist')}
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )

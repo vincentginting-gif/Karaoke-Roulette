@@ -305,6 +305,66 @@ export async function searchTracksByGenre(
   )
 }
 
+/** true, wenn `name` bei den Artists des Tracks (unscharf) vorkommt. */
+function artistMatches(t: SpotifyRawTrack, name: string): boolean {
+  const needle = name.trim().toLowerCase()
+  return (t.artists ?? []).some((a) => a.name.toLowerCase().includes(needle))
+}
+
+/**
+ * Sucht zufällige Songs bestimmter Artists im Spotify-Katalog. Für jeden
+ * Artist wird mit `artist:"Name"` gesucht, die Ergebnisse werden (unscharf
+ * gegen den Namen gefiltert und) über alle Artists zusammengeführt.
+ *
+ * @param artists Liste von Artist-Namen
+ */
+export async function searchTracksByArtist(artists: string[]): Promise<Track[]> {
+  const names = artists.map((a) => a.trim()).filter(Boolean)
+  if (names.length === 0) throw new ApiError('Bitte mindestens einen Artist angeben.')
+
+  // Anfragen begrenzen: bei vielen Artists weniger Seiten pro Artist.
+  const pagesPerArtist = names.length > 3 ? 6 : 10
+  const combined = new Map<string, Track>()
+
+  for (const name of names) {
+    const query = `artist:"${name}"`
+    const results = await Promise.allSettled(
+      Array.from({ length: pagesPerArtist }, (_, i) =>
+        searchTrackPage(query, i * SEARCH_PAGE_SIZE),
+      ),
+    )
+
+    const raw = new Map<string, Track>()
+    const strict = new Map<string, Track>()
+    for (const r of results) {
+      if (r.status !== 'fulfilled') continue
+      for (const t of r.value.tracks?.items ?? []) {
+        if (!isUsableTrack(t)) continue
+        const id = t.id as string
+        raw.set(id, mapTrack(t))
+        if (artistMatches(t, name)) strict.set(id, mapTrack(t))
+      }
+    }
+
+    // Bevorzugt die exakt passenden Treffer; sonst die Roh-Treffer (z. B. bei
+    // leicht abweichender Schreibweise).
+    const chosen = strict.size > 0 ? strict : raw
+    for (const [id, track] of chosen) if (!combined.has(id)) combined.set(id, track)
+  }
+
+  console.info(`[Artists] ${names.join(', ')} – ${combined.size} Songs`)
+
+  if (combined.size === 0) {
+    throw new ApiError(
+      `Für ${names.length > 1 ? 'diese Artists' : `„${names[0]}“`} wurden keine Songs ` +
+        `gefunden. Prüfe die Schreibweise. Hinweis: Der Artist-Modus nutzt die ` +
+        `Spotify-Katalog-Suche – im Development Mode kann diese eingeschränkt sein ` +
+        `(dann hilft „Extended Quota Mode“ im Dashboard).`,
+    )
+  }
+  return [...combined.values()]
+}
+
 /** Wandelt einen Fehler beim Track-Laden in eine klare, handlungsleitende Meldung. */
 function describeTrackError(e: unknown, playlist: Playlist): unknown {
   if (e instanceof ApiError && (e.status === 403 || e.status === 404)) {

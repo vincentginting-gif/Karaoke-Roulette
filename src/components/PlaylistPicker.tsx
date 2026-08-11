@@ -7,11 +7,19 @@ interface PlaylistPickerProps {
   loading: boolean
   onSelect: (playlist: Playlist) => void
   onDiscover: () => void
+  onArtists: () => void
   onCancel?: () => void
 }
 
 /** Auswahl-Grid der Nutzer-Playlists. */
-export function PlaylistPicker({ playlists, loading, onSelect, onDiscover, onCancel }: PlaylistPickerProps) {
+export function PlaylistPicker({
+  playlists,
+  loading,
+  onSelect,
+  onDiscover,
+  onArtists,
+  onCancel,
+}: PlaylistPickerProps) {
   return (
     <section className="stage fade-in">
       <header className="picker-header">
@@ -26,16 +34,25 @@ export function PlaylistPicker({ playlists, loading, onSelect, onDiscover, onCan
         )}
       </header>
 
-      <button className="discover-banner" onClick={onDiscover}>
-        <span className="discover-banner-emoji">🎧</span>
-        <span className="discover-banner-text">
-          <span className="discover-banner-title">Oder nach Genre entdecken</span>
-          <span className="discover-banner-hint">
-            Songs aus ganz Spotify – nach Genre & Beliebtheit
+      <div className="discover-banners">
+        <button className="discover-banner" onClick={onDiscover}>
+          <span className="discover-banner-emoji">🎧</span>
+          <span className="discover-banner-text">
+            <span className="discover-banner-title">Nach Genre entdecken</span>
+            <span className="discover-banner-hint">Songs aus ganz Spotify – nach Genre</span>
           </span>
-        </span>
-        <span className="discover-banner-arrow">→</span>
-      </button>
+          <span className="discover-banner-arrow">→</span>
+        </button>
+
+        <button className="discover-banner" onClick={onArtists}>
+          <span className="discover-banner-emoji">🎙️</span>
+          <span className="discover-banner-text">
+            <span className="discover-banner-title">Nach Artist</span>
+            <span className="discover-banner-hint">Zufällige Songs bestimmter Artists</span>
+          </span>
+          <span className="discover-banner-arrow">→</span>
+        </button>
+      </div>
 
       {loading ? (
         <Spinner label="Playlists werden geladen…" />

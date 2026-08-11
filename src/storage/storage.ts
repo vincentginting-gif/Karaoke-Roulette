@@ -13,6 +13,8 @@ const KEYS = {
   drawnPrefix: 'kr.drawn.',
   // Manuell entfernte (nicht ziehbare) Songs, ebenfalls pro Playlist.
   excludedPrefix: 'kr.excluded.',
+  // Zuletzt genutzte Artist-Liste (Artist-Modus).
+  artists: 'kr.artists',
 } as const
 
 function safeGet(key: string): string | null {
@@ -97,4 +99,21 @@ export function loadExcludedIds(playlistId: string): Set<string> {
 
 export function saveExcludedIds(playlistId: string, ids: Set<string>): void {
   safeSet(KEYS.excludedPrefix + playlistId, JSON.stringify([...ids]))
+}
+
+// ── Artist-Modus: zuletzt genutzte Artists ───────────────────
+
+export function loadArtistNames(): string[] {
+  const raw = safeGet(KEYS.artists)
+  if (!raw) return []
+  try {
+    const arr = JSON.parse(raw) as string[]
+    return Array.isArray(arr) ? arr.filter((s) => typeof s === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+export function saveArtistNames(names: string[]): void {
+  safeSet(KEYS.artists, JSON.stringify(names))
 }

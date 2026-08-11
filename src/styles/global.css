@@ -1066,6 +1066,79 @@ code {
   max-width: 680px;
 }
 
+.sp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+.sp-search {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.sp-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+.sp-search-input {
+  width: 100%;
+  padding: 11px 14px 11px 42px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.sp-search-input::placeholder {
+  color: var(--text-faint);
+}
+.sp-search-input:focus {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+.sp-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.sp-sort-label {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+}
+.sp-sort-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 34px 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236d6d80' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    no-repeat right 12px center;
+  color: var(--text);
+  font-size: 0.88rem;
+  cursor: pointer;
+  outline: none;
+}
+.sp-sort-select:focus {
+  border-color: var(--accent);
+}
+.sp-empty {
+  padding: 30px 12px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
 .sp-list {
   display: flex;
   flex-direction: column;
@@ -1274,6 +1347,110 @@ code {
 .discover-banner-arrow {
   font-size: 1.3rem;
   color: var(--accent);
+}
+.discover-banners {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.discover-banners .discover-banner {
+  margin-bottom: 0;
+}
+
+/* ── Artist-Modus ────────────────────────────────────────── */
+.artist-add {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.artist-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.artist-input::placeholder {
+  color: var(--text-faint);
+}
+.artist-input:focus {
+  border-color: var(--accent);
+  background: var(--surface-hover);
+}
+.artist-add-btn {
+  flex: none;
+}
+.artist-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.artist-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 16px;
+  border-radius: 999px;
+  background: linear-gradient(100deg, rgba(34, 211, 238, 0.2), rgba(244, 63, 142, 0.2));
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.3) inset;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.artist-chip-x {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+}
+.artist-chip-x:hover {
+  background: var(--accent-2);
+  color: #fff;
+}
+.artist-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.artist-suggest-label {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  margin-right: 2px;
+}
+.artist-suggest-chip {
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.artist-suggest-chip:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+@media (max-width: 640px) {
+  .discover-banners {
+    grid-template-columns: 1fr;
+  }
 }
 
 .genre-grid {

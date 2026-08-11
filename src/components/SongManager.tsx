@@ -1,6 +1,7 @@
+import { useMemo, useState } from 'react'
 import type { Playlist, Track } from '../spotify/types'
 import { AlbumCover } from './AlbumCover'
-import { ClockIcon } from './icons'
+import { ClockIcon, SearchIcon } from './icons'
 
 interface SongManagerProps {
   playlist: Playlist
@@ -9,6 +10,17 @@ interface SongManagerProps {
   onToggleExclude: (trackId: string) => void
   onBack: () => void
 }
+
+type SortKey = 'playlist' | 'title' | 'artist' | 'album' | 'duration' | 'pool'
+
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'playlist', label: 'Playlist-Reihenfolge' },
+  { value: 'title', label: 'Titel A–Z' },
+  { value: 'artist', label: 'Artist A–Z' },
+  { value: 'album', label: 'Album A–Z' },
+  { value: 'duration', label: 'Dauer (kurz → lang)' },
+  { value: 'pool', label: 'Entfernte zuerst' },
+]
 
 /** mm:ss aus Millisekunden. */
 function formatDuration(ms: number): string {
@@ -44,6 +56,47 @@ export function SongManager({
 }: SongManagerProps) {
   const activeCount = tracks.length - excludedIds.size
   const totalLabel = formatTotal(tracks)
+
+  const [query, setQuery] = useState('')
+  const [sortKey, setSortKey] = useState<SortKey>('playlist')
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    const filtered = q
+      ? tracks.filter(
+          (t) =>
+            t.title.toLowerCase().includes(q) ||
+            t.artist.toLowerCase().includes(q) ||
+            t.album.toLowerCase().includes(q),
+        )
+      : tracks
+
+    if (sortKey === 'playlist') return filtered
+
+    const withIdx = filtered.map((t, i) => ({ t, i }))
+    const cmp = (a: { t: Track; i: number }, b: { t: Track; i: number }): number => {
+      switch (sortKey) {
+        case 'title':
+          return a.t.title.localeCompare(b.t.title, 'de', { sensitivity: 'base' })
+        case 'artist':
+          return a.t.artist.localeCompare(b.t.artist, 'de', { sensitivity: 'base' })
+        case 'album':
+          return a.t.album.localeCompare(b.t.album, 'de', { sensitivity: 'base' })
+        case 'duration':
+          return (a.t.durationMs || 0) - (b.t.durationMs || 0)
+        case 'pool': {
+          const ea = excludedIds.has(a.t.id) ? 0 : 1
+          const eb = excludedIds.has(b.t.id) ? 0 : 1
+          return ea - eb
+        }
+        default:
+          return 0
+      }
+    }
+    return withIdx
+      .sort((a, b) => cmp(a, b) || a.i - b.i)
+      .map((x) => x.t)
+  }, [tracks, query, sortKey, excludedIds])
 
   return (
     <section className="stage sp-view fade-in">
@@ -83,6 +136,35 @@ export function SongManager({
         Songs werden beim Roulette nicht mehr gezogen – deine Spotify-Playlist bleibt unberührt.
       </p>
 
+      <div className="sp-toolbar">
+        <div className="sp-search">
+          <SearchIcon className="sp-search-icon" />
+          <input
+            className="sp-search-input"
+            type="search"
+            inputMode="search"
+            placeholder="In dieser Playlist suchen…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            aria-label="Songs durchsuchen"
+          />
+        </div>
+        <label className="sp-sort">
+          <span className="sp-sort-label">Sortieren</span>
+          <select
+            className="sp-sort-select"
+            value={sortKey}
+            onChange={(e) => setSortKey(e.target.value as SortKey)}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <div className="sp-list" role="list">
         <div className="sp-row sp-row-head" aria-hidden="true">
           <span className="sp-col-idx">#</span>
@@ -94,7 +176,7 @@ export function SongManager({
           <span className="sp-col-act" />
         </div>
 
-        {tracks.map((t, i) => {
+        {visible.map((t, i) => {
           const excluded = excludedIds.has(t.id)
           return (
             <div
@@ -131,6 +213,14 @@ export function SongManager({
             </div>
           )
         })}
+
+        {visible.length === 0 && (
+          <p className="sp-empty">
+            {query.trim()
+              ? `Keine Treffer für „${query.trim()}“.`
+              : 'Diese Playlist enthält keine Songs.'}
+          </p>
+        )}
       </div>
     </section>
   )
