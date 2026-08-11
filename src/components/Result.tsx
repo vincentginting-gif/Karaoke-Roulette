@@ -6,10 +6,11 @@ interface ResultProps {
   track: Track
   onAgain: () => void
   onOpenSpotify: () => void
+  onChangePlaylist: () => void
 }
 
 /** Ergebnisbereich – prominente Praesentation des Gewinner-Songs. */
-export function Result({ track, onAgain, onOpenSpotify }: ResultProps) {
+export function Result({ track, onAgain, onOpenSpotify, onChangePlaylist }: ResultProps) {
   return (
     <section className="stage stage-center result result-in">
       <p className="result-kicker">Dein Song 🎤</p>
@@ -31,6 +32,10 @@ export function Result({ track, onAgain, onOpenSpotify }: ResultProps) {
           Noch einen Song
         </button>
       </div>
+
+      <button className="btn btn-ghost result-switch" onClick={onChangePlaylist}>
+        🔀 Playlist wechseln
+      </button>
     </section>
   )
 }

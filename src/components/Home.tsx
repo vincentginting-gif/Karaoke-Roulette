@@ -36,6 +36,10 @@ export function Home({ playlist, onSpin, onChangePlaylist, remaining, total }: H
         Song auswaehlen
       </button>
 
+      <button className="btn btn-ghost" onClick={onChangePlaylist}>
+        🔀 Playlist wechseln
+      </button>
+
       <p className="remaining-hint">
         {total > 0 && (
           <>

@@ -237,7 +237,14 @@ export function App() {
       />
     )
   } else if (view === 'result' && winner) {
-    content = <Result track={winner} onAgain={spin} onOpenSpotify={openSpotify} />
+    content = (
+      <Result
+        track={winner}
+        onAgain={spin}
+        onOpenSpotify={openSpotify}
+        onChangePlaylist={openPicker}
+      />
+    )
   } else {
     // view === 'home'
     content = tracksLoading ? (

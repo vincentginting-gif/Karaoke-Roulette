@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 // (useRef fuer stabile Callback-Refs, damit die Animation genau einmal laeuft)
 import type { Track } from '../spotify/types'
-import { easeOutWithSettle } from '../roulette/easing'
+import { easeOutQuint } from '../roulette/easing'
 import { playStop, playTick } from '../roulette/audio'
 import { AlbumCover } from './AlbumCover'
 
@@ -63,9 +63,9 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
     const startIndex = Math.min(3, winnerIndex)
     const startX = centerToX(startIndex)
 
-    // Dezenter Versatz (< halbe Karte), damit der Stop nicht steril
-    // immer pixelgenau mittig wirkt – der Gewinner bleibt klar unter dem Marker.
-    const jitter = (Math.random() - 0.5) * step * 0.28
+    // Nur ein winziger Versatz, damit der Stop nicht steril pixelgenau wirkt –
+    // der Gewinner bleibt klar und sauber mittig unter dem Marker.
+    const jitter = (Math.random() - 0.5) * step * 0.12
     const finalX = centerToX(winnerIndex) + jitter
 
     const duration = reduceMotion ? 700 : DURATION_MS
@@ -92,13 +92,14 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
       cards[lastCenter]?.classList.remove('is-center')
       cards[winnerIndex]?.classList.add('is-center', 'is-winner')
       if (soundRef.current) playStop()
-      timeoutId = window.setTimeout(() => onCompleteRef.current(), reduceMotion ? 300 : 850)
+      // Kurz den Gewinner unter dem Marker zeigen, dann direkt das Ergebnis.
+      timeoutId = window.setTimeout(() => onCompleteRef.current(), reduceMotion ? 250 : 450)
     }
 
     const frame = (ts: number) => {
       if (!startTs) startTs = ts
       const t = Math.min(1, (ts - startTs) / duration)
-      const eased = easeOutWithSettle(t)
+      const eased = easeOutQuint(t)
       const x = startX + (finalX - startX) * eased
       track.style.transform = `translate3d(${x}px, 0, 0)`
 
@@ -129,11 +130,10 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
       <p className="roulette-hint">Welcher Song kommt?</p>
 
       <div className="roulette-viewport" ref={viewportRef}>
-        {/* Fester Marker in der Mitte */}
+        {/* Fester Marker in der Mitte: eine saubere Linie mit buendigen Pfeilen */}
         <div className="roulette-marker" aria-hidden="true">
-          <span className="marker-top" />
-          <span className="marker-line" />
-          <span className="marker-bottom" />
+          <span className="marker-arrow marker-arrow-top" />
+          <span className="marker-arrow marker-arrow-bottom" />
         </div>
 
         {/* Randverlauf fuer Tiefe */}

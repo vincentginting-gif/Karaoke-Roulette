@@ -590,41 +590,39 @@ code {
   100% { transform: scale(1); }
 }
 
-/* Fester Marker */
+/* Fester Marker: eine durchgehende, mittige Linie ... */
 .roulette-marker {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 3px;
+  width: 2px;
   z-index: 4;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 14px rgba(34, 211, 238, 0.65);
   pointer-events: none;
 }
-.marker-line {
-  flex: 1;
-  width: 3px;
-  border-radius: 3px;
-  background: linear-gradient(var(--accent), var(--accent-2));
-  box-shadow: 0 0 16px rgba(34, 211, 238, 0.7);
-}
-.marker-top,
-.marker-bottom {
+/* ... mit exakt auf der Linie zentrierten Pfeilen (immer buendig). */
+.marker-arrow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
 }
-.marker-top {
+.marker-arrow-top {
+  top: -3px;
   border-top: 11px solid var(--accent);
-  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.8));
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.85));
 }
-.marker-bottom {
+.marker-arrow-bottom {
+  bottom: -3px;
   border-bottom: 11px solid var(--accent-2);
-  filter: drop-shadow(0 0 6px rgba(244, 63, 142, 0.8));
+  filter: drop-shadow(0 0 5px rgba(244, 63, 142, 0.85));
 }
 
 /* Randverlauf (Tiefe) */
@@ -688,6 +686,13 @@ code {
   flex-wrap: wrap;
   justify-content: center;
   margin-top: 14px;
+}
+.result-switch {
+  margin-top: 4px;
+  opacity: 0.75;
+}
+.result-switch:hover {
+  opacity: 1;
 }
 
 /* ── Spinner ─────────────────────────────────────────────── */
