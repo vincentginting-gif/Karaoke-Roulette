@@ -823,3 +823,231 @@ code {
     transform: none;
   }
 }
+
+/* ── Einstellungen (Modal) + Song-Verwaltung + Ueberraschung ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5, 5, 9, 0.72);
+  backdrop-filter: blur(6px);
+  animation: fade-in 0.2s var(--ease-out);
+}
+.modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+  overflow-y: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-soft);
+  box-shadow: var(--shadow);
+  animation: result-in 0.28s var(--ease-out);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 12px;
+}
+.modal-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 14px;
+}
+.modal-close:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 14px 18px;
+}
+.setting-row,
+.setting-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  text-align: left;
+  color: var(--text);
+  transition: background 0.15s;
+}
+.setting-row:hover,
+.setting-action:hover {
+  background: var(--surface);
+}
+.setting-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.setting-action:disabled:hover {
+  background: transparent;
+}
+.setting-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.setting-label {
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+.setting-hint {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  line-height: 1.35;
+}
+.setting-action-icon {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  color: var(--text-dim);
+}
+.setting-action.danger .setting-action-icon {
+  color: var(--spotify);
+}
+.setting-action.danger:hover {
+  background: rgba(244, 63, 142, 0.08);
+}
+
+/* Toggle-Switch */
+.switch {
+  flex: none;
+  width: 46px;
+  height: 27px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  position: relative;
+  transition: background 0.2s;
+}
+.switch-on {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+}
+.switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s var(--ease-out);
+}
+.switch-on .switch-knob {
+  transform: translateX(19px);
+}
+
+/* Reset-Button auf der Startseite */
+.btn-reset {
+  font-size: 0.9rem;
+  padding: 10px 18px;
+  color: var(--text-dim);
+}
+
+/* Song-Verwaltung */
+.manager-hint {
+  margin: 0 0 18px;
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 640px;
+}
+.song-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.song-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.song-row-excluded {
+  opacity: 0.5;
+}
+.song-row-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  flex: none;
+}
+.song-row-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.song-row-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-row-excluded .song-row-title {
+  text-decoration: line-through;
+}
+.song-row-artist {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.song-row-btn {
+  flex: none;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+.song-row-btn.restore {
+  color: var(--accent);
+  border-color: rgba(34, 211, 238, 0.4);
+}
+
+/* Mystery-Karte (Ueberraschungs-Modus) */
+.song-card-mystery {
+  filter: brightness(0.85);
+}
+.mystery-cover {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(140deg, #14141f, #20202e);
+}
+.mystery-mark {
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text-faint);
+  opacity: 0.6;
+}
+.song-card.is-center .mystery-mark {
+  color: var(--accent);
+  opacity: 0.9;
+}

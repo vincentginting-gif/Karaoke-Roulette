@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { isConfigured } from './spotify/auth'
 import { ApiError, fetchCurrentUserId, fetchPlaylists, fetchPlaylistTracks } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
 import {
+  clearDrawnIds,
   loadActivePlaylist,
   loadDrawnIds,
+  loadExcludedIds,
   saveActivePlaylist,
   saveDrawnIds,
+  saveExcludedIds,
 } from './storage/storage'
 import { buildStrip, pickWinner, WINNER_INDEX } from './roulette/engine'
 import { unlockAudio } from './roulette/audio'
@@ -20,11 +23,14 @@ import { Roulette } from './components/Roulette'
 import { Result } from './components/Result'
 import { Spinner } from './components/Spinner'
 import { ErrorToast } from './components/ErrorToast'
-import { SpotifyIcon } from './components/icons'
+import { SettingsPanel } from './components/SettingsPanel'
+import { SongManager } from './components/SongManager'
+import { GearIcon } from './components/icons'
 
-type View = 'home' | 'picker' | 'roulette' | 'result'
+type View = 'home' | 'picker' | 'roulette' | 'result' | 'manage'
 
 const SOUND_KEY = 'kr.sound.enabled'
+const SURPRISE_KEY = 'kr.surprise.enabled'
 
 export function App() {
   const auth = useAuth()
@@ -48,14 +54,24 @@ export function App() {
   const [drawnIds, setDrawnIds] = useState<Set<string>>(new Set())
   const [lastWinnerId, setLastWinnerId] = useState<string | null>(null)
 
+  // Manuell entfernte (nicht ziehbare) Songs
+  const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set())
+
   // Roulette-Daten
   const [strip, setStrip] = useState<Track[]>([])
   const [winner, setWinner] = useState<Track | null>(null)
 
-  // Sound-Einstellung (dezent, persistent)
+  // Einstellungen (persistent)
   const [soundEnabled, setSoundEnabled] = useState<boolean>(
     () => localStorage.getItem(SOUND_KEY) !== 'off',
   )
+  const [surpriseMode, setSurpriseMode] = useState<boolean>(
+    () => localStorage.getItem(SURPRISE_KEY) === 'on',
+  )
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // Ziehbarer Pool = alle Tracks ohne die manuell entfernten.
+  const pool = useMemo(() => tracks.filter((t) => !excludedIds.has(t.id)), [tracks, excludedIds])
 
   const showError = useCallback((msg: string) => setError(msg), [])
 
@@ -72,6 +88,7 @@ export function App() {
       if (saved) {
         setActivePlaylist(saved)
         setDrawnIds(loadDrawnIds(saved.id))
+        setExcludedIds(loadExcludedIds(saved.id))
       }
     }
   }, [auth.status])
@@ -156,20 +173,25 @@ export function App() {
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
     setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
     setView('home')
   }, [])
 
   // ── Song ziehen (Roulette starten) ──
   const spin = useCallback(() => {
-    if (tracks.length === 0) {
-      showError('Es sind keine Songs geladen. Bitte eine Playlist mit Songs waehlen.')
+    if (pool.length === 0) {
+      showError(
+        tracks.length === 0
+          ? 'Es sind keine Songs geladen. Bitte eine Playlist mit Songs waehlen.'
+          : 'Alle Songs wurden aus dem Pool entfernt. Hole unter „Songs verwalten“ welche zurück.',
+      )
       return
     }
     unlockAudio() // Audio nach User-Geste freischalten
 
     try {
-      const { winner: picked, didReset } = pickWinner(tracks, drawnIds, lastWinnerId)
+      const { winner: picked, didReset } = pickWinner(pool, drawnIds, lastWinnerId)
 
       // No-Repeat-Zustand aktualisieren (ggf. zuruecksetzen).
       const nextDrawn = didReset ? new Set<string>() : new Set(drawnIds)
@@ -178,12 +200,41 @@ export function App() {
       if (activePlaylist) saveDrawnIds(activePlaylist.id, nextDrawn)
 
       setWinner(picked)
-      setStrip(buildStrip(tracks, picked))
+      setStrip(buildStrip(pool, picked))
       setView('roulette')
     } catch {
       showError('Song konnte nicht ausgewaehlt werden. Bitte erneut versuchen.')
     }
-  }, [tracks, drawnIds, lastWinnerId, activePlaylist, showError])
+  }, [pool, tracks.length, drawnIds, lastWinnerId, activePlaylist, showError])
+
+  // ── Gezogene Songs zuruecksetzen (wieder in den Pool) ──
+  const resetDrawn = useCallback(() => {
+    setDrawnIds(new Set())
+    setLastWinnerId(null)
+    if (activePlaylist) clearDrawnIds(activePlaylist.id)
+  }, [activePlaylist])
+
+  // ── Song aus dem Pool entfernen / zurueckholen ──
+  const toggleExclude = useCallback(
+    (trackId: string) => {
+      setExcludedIds((prev) => {
+        const next = new Set(prev)
+        if (next.has(trackId)) next.delete(trackId)
+        else next.add(trackId)
+        if (activePlaylist) saveExcludedIds(activePlaylist.id, next)
+        return next
+      })
+    },
+    [activePlaylist],
+  )
+
+  const toggleSurprise = useCallback(() => {
+    setSurpriseMode((prev) => {
+      const next = !prev
+      localStorage.setItem(SURPRISE_KEY, next ? 'on' : 'off')
+      return next
+    })
+  }, [])
 
   const onRouletteComplete = useCallback(() => {
     if (winner) setLastWinnerId(winner.id)
@@ -206,11 +257,15 @@ export function App() {
 
   if (!isConfigured()) {
     return (
-      <Shell soundEnabled={soundEnabled} onToggleSound={toggleSound} connected={false}>
+      <Shell connected={false}>
         <ConfigNeeded />
       </Shell>
     )
   }
+
+  // Verbleibende ziehbare Songs (im Pool, noch nicht gezogen).
+  const drawnInPool = pool.filter((t) => drawnIds.has(t.id)).length
+  const remaining = Math.max(0, pool.length - drawnInPool)
 
   let content: React.ReactNode
 
@@ -227,12 +282,23 @@ export function App() {
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )
+  } else if (view === 'manage') {
+    content = (
+      <SongManager
+        playlistName={activePlaylist.name}
+        tracks={tracks}
+        excludedIds={excludedIds}
+        onToggleExclude={toggleExclude}
+        onBack={() => setView('home')}
+      />
+    )
   } else if (view === 'roulette' && winner) {
     content = (
       <Roulette
         strip={strip}
         winnerIndex={WINNER_INDEX}
         soundEnabled={soundEnabled}
+        surprise={surpriseMode}
         onComplete={onRouletteComplete}
       />
     )
@@ -254,53 +320,63 @@ export function App() {
         playlist={activePlaylist}
         onSpin={spin}
         onChangePlaylist={openPicker}
-        remaining={Math.max(0, tracks.length - drawnIds.size)}
-        total={tracks.length}
+        onReset={resetDrawn}
+        remaining={remaining}
+        total={pool.length}
       />
     )
   }
 
+  const showSettingsButton = auth.status === 'connected' && Boolean(activePlaylist)
+
   return (
     <Shell
-      soundEnabled={soundEnabled}
-      onToggleSound={toggleSound}
       connected={auth.status === 'connected'}
-      onDisconnect={auth.disconnect}
+      onOpenSettings={showSettingsButton ? () => setSettingsOpen(true) : undefined}
     >
       {content}
       {error && <ErrorToast message={error} onDismiss={() => setError(null)} />}
+      {settingsOpen && (
+        <SettingsPanel
+          soundEnabled={soundEnabled}
+          onToggleSound={toggleSound}
+          surpriseMode={surpriseMode}
+          onToggleSurprise={toggleSurprise}
+          drawnCount={drawnInPool}
+          onReset={resetDrawn}
+          excludedCount={excludedIds.size}
+          onManageSongs={() => {
+            setSettingsOpen(false)
+            setView('manage')
+          }}
+          onClose={() => setSettingsOpen(false)}
+          onDisconnect={() => {
+            setSettingsOpen(false)
+            auth.disconnect()
+          }}
+        />
+      )}
     </Shell>
   )
 }
 
-// ── Layout-Huelle mit Header (Sound-Toggle, Trennen) ──────────
+// ── Layout-Huelle mit Header (Einstellungen) ──────────────────
 
 interface ShellProps {
   children: React.ReactNode
-  soundEnabled: boolean
-  onToggleSound: () => void
   connected: boolean
-  onDisconnect?: () => void
+  onOpenSettings?: () => void
 }
 
-function Shell({ children, soundEnabled, onToggleSound, connected, onDisconnect }: ShellProps) {
+function Shell({ children, connected, onOpenSettings }: ShellProps) {
   return (
     <div className="app">
       <div className="bg-glow" aria-hidden="true" />
       <header className="app-header">
         <div className="app-header-actions">
-          <button
-            className="icon-btn"
-            onClick={onToggleSound}
-            aria-pressed={soundEnabled}
-            title={soundEnabled ? 'Ton aus' : 'Ton an'}
-          >
-            {soundEnabled ? '🔊' : '🔇'}
-          </button>
-          {connected && onDisconnect && (
-            <button className="icon-btn disconnect" onClick={onDisconnect} title="Spotify trennen">
-              <SpotifyIcon className="icon-btn-svg" />
-              <span className="disconnect-x">✕</span>
+          {connected && onOpenSettings && (
+            <button className="icon-btn" onClick={onOpenSettings} title="Einstellungen" aria-label="Einstellungen">
+              <GearIcon className="icon-btn-svg" />
             </button>
           )}
         </div>

@@ -11,6 +11,8 @@ const KEYS = {
   activePlaylist: 'kr.playlist.active',
   // History wird pro Playlist gespeichert -> Praefix + Playlist-ID.
   drawnPrefix: 'kr.drawn.',
+  // Manuell entfernte (nicht ziehbare) Songs, ebenfalls pro Playlist.
+  excludedPrefix: 'kr.excluded.',
 } as const
 
 function safeGet(key: string): string | null {
@@ -77,4 +79,22 @@ export function clearDrawnIds(playlistId: string): void {
   } catch {
     /* ignore */
   }
+}
+
+// ── Manuell entfernte Songs (nicht ziehbar) ──────────────────
+
+/** Liefert das Set der manuell entfernten Track-IDs fuer eine Playlist. */
+export function loadExcludedIds(playlistId: string): Set<string> {
+  const raw = safeGet(KEYS.excludedPrefix + playlistId)
+  if (!raw) return new Set()
+  try {
+    const arr = JSON.parse(raw) as string[]
+    return new Set(Array.isArray(arr) ? arr : [])
+  } catch {
+    return new Set()
+  }
+}
+
+export function saveExcludedIds(playlistId: string, ids: Set<string>): void {
+  safeSet(KEYS.excludedPrefix + playlistId, JSON.stringify([...ids]))
 }

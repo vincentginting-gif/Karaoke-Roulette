@@ -1,17 +1,19 @@
 import type { Playlist } from '../spotify/types'
 import { AlbumCover } from './AlbumCover'
-import { DiceIcon, MicIcon } from './icons'
+import { DiceIcon, MicIcon, UndoIcon } from './icons'
 
 interface HomeProps {
   playlist: Playlist
   onSpin: () => void
   onChangePlaylist: () => void
+  onReset: () => void
   remaining: number
   total: number
 }
 
 /** Startseite nach Verbindung + Playlist-Auswahl: der grosse Button. */
-export function Home({ playlist, onSpin, onChangePlaylist, remaining, total }: HomeProps) {
+export function Home({ playlist, onSpin, onChangePlaylist, onReset, remaining, total }: HomeProps) {
+  const drawn = total - remaining
   return (
     <section className="stage stage-center fade-in">
       <div className="brand brand-compact">
@@ -47,6 +49,13 @@ export function Home({ playlist, onSpin, onChangePlaylist, remaining, total }: H
           </>
         )}
       </p>
+
+      {drawn > 0 && (
+        <button className="btn btn-ghost btn-reset" onClick={onReset}>
+          <UndoIcon className="btn-icon" />
+          Gezogene zurücksetzen ({drawn})
+        </button>
+      )}
     </section>
   )
 }

@@ -10,6 +10,8 @@ interface RouletteProps {
   strip: Track[]
   winnerIndex: number
   soundEnabled: boolean
+  /** Ueberraschungs-Modus: Cover & Titel der Karten verbergen. */
+  surprise: boolean
   /** Wird aufgerufen, wenn die Animation vollstaendig gestoppt ist. */
   onComplete: () => void
 }
@@ -27,7 +29,7 @@ const DURATION_MS = 5800
  * wird (nicht aus Frame-Inkrementen), landet IMMER derselbe Song –
  * unabhaengig von der Bildwiederholrate.
  */
-export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: RouletteProps) {
+export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplete }: RouletteProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
@@ -130,7 +132,7 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
 
   return (
     <section className="stage stage-center roulette fade-in">
-      <p className="roulette-hint">Welcher Song kommt?</p>
+      <p className="roulette-hint">{surprise ? 'Große Überraschung …' : 'Welcher Song kommt?'}</p>
 
       <div className="roulette-viewport" ref={viewportRef}>
         {/* Fester Marker in der Mitte: eine saubere Linie mit buendigen Pfeilen */}
@@ -145,15 +147,28 @@ export function Roulette({ strip, winnerIndex, soundEnabled, onComplete }: Roule
 
         {/* Beweglicher Karten-Track */}
         <div className="roulette-track" ref={trackRef}>
-          {strip.map((track, i) => (
-            <article className="song-card" key={i}>
-              <AlbumCover url={track.coverUrl} alt={track.title} className="song-card-cover" />
-              <div className="song-card-info">
-                <span className="song-card-title">{track.title}</span>
-                <span className="song-card-artist">{track.artist}</span>
-              </div>
-            </article>
-          ))}
+          {strip.map((track, i) =>
+            surprise ? (
+              // Ueberraschungs-Modus: Mystery-Karte ohne Cover/Titel.
+              <article className="song-card song-card-mystery" key={i}>
+                <div className="song-card-cover mystery-cover">
+                  <span className="mystery-mark">?</span>
+                </div>
+                <div className="song-card-info">
+                  <span className="song-card-title">???</span>
+                  <span className="song-card-artist">&nbsp;</span>
+                </div>
+              </article>
+            ) : (
+              <article className="song-card" key={i}>
+                <AlbumCover url={track.coverUrl} alt={track.title} className="song-card-cover" />
+                <div className="song-card-info">
+                  <span className="song-card-title">{track.title}</span>
+                  <span className="song-card-artist">{track.artist}</span>
+                </div>
+              </article>
+            ),
+          )}
         </div>
       </div>
     </section>
