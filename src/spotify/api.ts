@@ -176,6 +176,8 @@ function mapTrack(t: SpotifyRawTrack): Track {
     artist: t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
     coverUrl: firstImageUrl(t.album?.images),
     spotifyUrl: t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`,
+    album: t.album?.name ?? '',
+    durationMs: t.duration_ms ?? 0,
   }
 }
 

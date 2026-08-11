@@ -24,6 +24,10 @@ export interface Track {
   coverUrl: string | null
   /** Direkter Link zur Spotify-Track-Seite. */
   spotifyUrl: string
+  /** Albumname (für die Spotify-artige Listenansicht). */
+  album: string
+  /** Spieldauer in Millisekunden (0, falls unbekannt). */
+  durationMs: number
 }
 
 /** Aktueller Auth-Zustand (nur In-Memory + localStorage-Token). */
@@ -56,8 +60,9 @@ export interface SpotifyRawTrack {
   id: string | null
   name: string
   artists: { name: string }[]
-  album: { images: SpotifyImage[] | null }
+  album: { name?: string; images: SpotifyImage[] | null }
   external_urls: { spotify?: string }
+  duration_ms?: number
   is_local?: boolean
   type?: string
   /** Beliebtheit 0–100 (bei Such-Ergebnissen vorhanden). */

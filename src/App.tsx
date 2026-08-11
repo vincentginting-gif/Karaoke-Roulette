@@ -341,7 +341,7 @@ export function App() {
   } else if (view === 'manage') {
     content = (
       <SongManager
-        playlistName={activePlaylist.name}
+        playlist={activePlaylist}
         tracks={tracks}
         excludedIds={excludedIds}
         onToggleExclude={toggleExclude}
