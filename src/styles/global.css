@@ -379,6 +379,13 @@ code {
   min-height: 1.2em;
 }
 
+.home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
 /* ── Playlist-Picker ─────────────────────────────────────── */
 
 .picker-header {

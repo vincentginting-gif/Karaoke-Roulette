@@ -376,6 +376,7 @@ export function App() {
         playlist={activePlaylist}
         onSpin={spin}
         onChangePlaylist={openPicker}
+        onManageSongs={() => setView('manage')}
         onReset={resetDrawn}
         remaining={remaining}
         total={pool.length}
