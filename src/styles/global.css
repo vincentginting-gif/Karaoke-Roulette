@@ -1361,11 +1361,12 @@ code {
 /* ── Artist-Modus ────────────────────────────────────────── */
 .artist-add {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 16px;
 }
 .artist-input {
-  flex: 1;
+  flex: 1 1 180px;
   min-width: 0;
   padding: 12px 16px;
   border-radius: 999px;

@@ -63,12 +63,12 @@ const ARTIST_SUGGESTIONS = [
   'Die Ärzte',
 ]
 const ALBUM_SUGGESTIONS = [
-  'Thriller',
-  '25',
-  'Rumours',
-  '÷ (Divide)',
-  'Back in Black',
-  '1989',
+  'Thriller — Michael Jackson',
+  '25 — Adele',
+  'Rumours — Fleetwood Mac',
+  '÷ — Ed Sheeran',
+  'Back in Black — AC/DC',
+  '1989 — Taylor Swift',
 ]
 
 /** Baut eine synthetische "Playlist" für eine Entdecken-Auswahl. */
@@ -451,9 +451,10 @@ export function App() {
     content = (
       <ChipQueryPicker
         title="Songs nach Album"
-        subtitle="Füge Alben hinzu – gezogen werden zufällige Songs daraus."
+        subtitle="Füge Alben hinzu – gezogen werden zufällige Songs daraus. Interpret angeben, wenn der Albumname mehrdeutig ist."
         itemNoun="Album"
-        placeholder="Album eingeben, z. B. Thriller"
+        placeholder="Album, z. B. Thriller"
+        secondaryPlaceholder="Interpret (optional)"
         suggestions={ALBUM_SUGGESTIONS}
         initialItems={albumNames}
         initialLimit={albumLimit}

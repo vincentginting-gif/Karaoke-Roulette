@@ -7,6 +7,8 @@ interface ChipQueryPickerProps {
   /** Nomen im Singular für Labels, z. B. "Artist" oder "Album". */
   itemNoun: string
   placeholder: string
+  /** Optionales zweites Eingabefeld (z. B. Interpret beim Album-Modus). */
+  secondaryPlaceholder?: string
   suggestions: string[]
   initialItems: string[]
   initialLimit: number
@@ -31,6 +33,7 @@ export function ChipQueryPicker({
   subtitle,
   itemNoun,
   placeholder,
+  secondaryPlaceholder,
   suggestions,
   initialItems,
   initialLimit,
@@ -40,15 +43,26 @@ export function ChipQueryPicker({
 }: ChipQueryPickerProps) {
   const [items, setItems] = useState<string[]>(initialItems)
   const [input, setInput] = useState('')
+  const [input2, setInput2] = useState('')
   const [limit, setLimit] = useState<number>(initialLimit)
 
-  const add = (raw: string) => {
+  /** Fügt einen fertigen Eintrag hinzu (dedupliziert, case-insensitiv). */
+  const addRaw = (raw: string) => {
     const name = raw.trim()
     if (!name) return
     if (!items.some((a) => a.toLowerCase() === name.toLowerCase())) {
       setItems((prev) => [...prev, name])
     }
+  }
+
+  /** Übernimmt die Eingabefelder als neuen Eintrag ("Album — Interpret"). */
+  const commit = () => {
+    const primary = input.trim()
+    if (!primary) return
+    const secondary = input2.trim()
+    addRaw(secondaryPlaceholder && secondary ? `${primary} — ${secondary}` : primary)
     setInput('')
+    setInput2('')
   }
 
   const remove = (name: string) => setItems((prev) => prev.filter((a) => a !== name))
@@ -70,10 +84,10 @@ export function ChipQueryPicker({
       </header>
 
       <form
-        className="artist-add"
+        className={`artist-add${secondaryPlaceholder ? ' artist-add-two' : ''}`}
         onSubmit={(e) => {
           e.preventDefault()
-          add(input)
+          commit()
         }}
       >
         <input
@@ -84,6 +98,16 @@ export function ChipQueryPicker({
           onChange={(e) => setInput(e.target.value)}
           aria-label={`${itemNoun} hinzufügen`}
         />
+        {secondaryPlaceholder && (
+          <input
+            className="artist-input artist-input-secondary"
+            type="text"
+            placeholder={secondaryPlaceholder}
+            value={input2}
+            onChange={(e) => setInput2(e.target.value)}
+            aria-label="Interpret (optional)"
+          />
+        )}
         <button type="submit" className="btn btn-ghost artist-add-btn" disabled={!input.trim()}>
           Hinzufügen
         </button>
@@ -111,7 +135,7 @@ export function ChipQueryPicker({
         <div className="artist-suggest">
           <span className="artist-suggest-label">Vorschläge:</span>
           {openSuggestions.map((s) => (
-            <button key={s} className="artist-suggest-chip" onClick={() => add(s)}>
+            <button key={s} className="artist-suggest-chip" onClick={() => addRaw(s)}>
               + {s}
             </button>
           ))}

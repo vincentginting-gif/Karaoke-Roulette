@@ -328,32 +328,44 @@ function albumMatches(t: SpotifyRawTrack, name: string): boolean {
 }
 
 /**
- * Generische Katalog-Suche über einen Feld-Filter (`artist:` oder `album:`).
- * Für jeden Namen wird gesucht, unscharf gefiltert, optional auf `perLimit`
- * zufällig begrenzt und über alle Namen dedupliziert zusammengeführt.
+ * Zerlegt ein Album-Label in Album + optionalen Interpreten. Format:
+ * `"Album — Interpret"` (die App speichert Album-Einträge so).
+ */
+function parseAlbumLabel(label: string): { album: string; artist: string } {
+  const idx = label.indexOf(' — ')
+  if (idx === -1) return { album: label.trim(), artist: '' }
+  return { album: label.slice(0, idx).trim(), artist: label.slice(idx + 3).trim() }
+}
+
+/**
+ * Generische Katalog-Suche. Für jedes Label wird per `buildQuery` eine Suche
+ * gebaut, unscharf via `matches` gefiltert, optional auf `perLimit` zufällig
+ * begrenzt und über alle Labels dedupliziert zusammengeführt.
  *
- * @param field Spotify-Suchfeld
- * @param rawNames Liste von Namen (Artists bzw. Alben)
- * @param perLimit max. Songs pro Name (<= 0 = unbegrenzt)
- * @param matches unscharfer Namensabgleich
+ * @param tag Log-/Kontext-Label
+ * @param rawLabels Liste von Einträgen (Artists bzw. Alben)
+ * @param perLimit max. Songs pro Eintrag (<= 0 = unbegrenzt)
+ * @param buildQuery Spotify-Suchausdruck je Eintrag
+ * @param matches unscharfer Abgleich je Eintrag
  */
 async function searchTracksByField(
-  field: 'artist' | 'album',
-  rawNames: string[],
+  tag: string,
+  rawLabels: string[],
   perLimit: number,
-  matches: (t: SpotifyRawTrack, name: string) => boolean,
+  buildQuery: (label: string) => string,
+  matches: (t: SpotifyRawTrack, label: string) => boolean,
 ): Promise<Track[]> {
-  const names = rawNames.map((a) => a.trim()).filter(Boolean)
-  if (names.length === 0) throw new ApiError('Bitte mindestens einen Eintrag angeben.')
+  const labels = rawLabels.map((a) => a.trim()).filter(Boolean)
+  if (labels.length === 0) throw new ApiError('Bitte mindestens einen Eintrag angeben.')
 
   // Anfragen begrenzen; bei einem knappen Limit reichen weniger Seiten.
-  let pagesPer = names.length > 3 ? 6 : 10
+  let pagesPer = labels.length > 3 ? 6 : 10
   if (perLimit > 0) pagesPer = Math.min(pagesPer, Math.ceil((perLimit * 2) / SEARCH_PAGE_SIZE) + 1)
 
   const combined = new Map<string, Track>()
 
-  for (const name of names) {
-    const query = `${field}:"${name}"`
+  for (const label of labels) {
+    const query = buildQuery(label)
     const results = await Promise.allSettled(
       Array.from({ length: pagesPer }, (_, i) => searchTrackPage(query, i * SEARCH_PAGE_SIZE)),
     )
@@ -366,7 +378,7 @@ async function searchTracksByField(
         if (!isUsableTrack(t)) continue
         const id = t.id as string
         raw.set(id, mapTrack(t))
-        if (matches(t, name)) strict.set(id, mapTrack(t))
+        if (matches(t, label)) strict.set(id, mapTrack(t))
       }
     }
 
@@ -375,7 +387,7 @@ async function searchTracksByField(
     for (const track of chosen) if (!combined.has(track.id)) combined.set(track.id, track)
   }
 
-  console.info(`[${field}] ${names.join(', ')} (max ${perLimit || '∞'}/Name) – ${combined.size} Songs`)
+  console.info(`[${tag}] ${labels.join(', ')} (max ${perLimit || '∞'}/Eintrag) – ${combined.size} Songs`)
   return [...combined.values()]
 }
 
@@ -387,7 +399,13 @@ export async function searchTracksByArtist(
   artists: string[],
   perArtistLimit = 0,
 ): Promise<Track[]> {
-  const tracks = await searchTracksByField('artist', artists, perArtistLimit, artistMatches)
+  const tracks = await searchTracksByField(
+    'artist',
+    artists,
+    perArtistLimit,
+    (name) => `artist:"${name}"`,
+    artistMatches,
+  )
   if (tracks.length === 0) {
     throw new ApiError(
       `Für ${artists.length > 1 ? 'diese Artists' : `„${artists[0] ?? ''}“`} wurden keine ` +
@@ -407,7 +425,19 @@ export async function searchTracksByAlbum(
   albums: string[],
   perAlbumLimit = 0,
 ): Promise<Track[]> {
-  const tracks = await searchTracksByField('album', albums, perAlbumLimit, albumMatches)
+  const tracks = await searchTracksByField(
+    'album',
+    albums,
+    perAlbumLimit,
+    (label) => {
+      const { album, artist } = parseAlbumLabel(label)
+      return artist ? `album:"${album}" artist:"${artist}"` : `album:"${album}"`
+    },
+    (t, label) => {
+      const { album, artist } = parseAlbumLabel(label)
+      return albumMatches(t, album) && (!artist || artistMatches(t, artist))
+    },
+  )
   if (tracks.length === 0) {
     throw new ApiError(
       `Für ${albums.length > 1 ? 'diese Alben' : `„${albums[0] ?? ''}“`} wurden keine ` +
