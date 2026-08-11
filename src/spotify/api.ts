@@ -207,9 +207,13 @@ async function loadItems(startUrl: string): Promise<Track[]> {
 
 // ── Entdecken: Songs aus dem Spotify-Katalog per Suche ───────
 
-/** Eine Seite Track-Suche holen (mit optionalem Genre-Filter). */
+// Seit der Migration (Feb. 2026) ist das Such-Limit max. 10 (vorher 50).
+const SEARCH_PAGE_SIZE = 10
+const SEARCH_PAGES = 12 // -> bis zu 120 Roh-Treffer
+
+/** Eine Seite Track-Suche holen. */
 async function searchTrackPage(q: string, offset: number): Promise<SpotifySearchResponse> {
-  const url = `/search?type=track&limit=50&offset=${offset}&q=${encodeURIComponent(q)}`
+  const url = `/search?type=track&limit=${SEARCH_PAGE_SIZE}&offset=${offset}&q=${encodeURIComponent(q)}`
   return apiFetch<SpotifySearchResponse>(url)
 }
 
@@ -220,42 +224,44 @@ async function searchTrackPage(q: string, offset: number): Promise<SpotifySearch
  *
  * @param genreQuery Genre-Begriff (z. B. "hip hop", "jazz")
  * @param minPopularity nur Tracks mit popularity >= diesem Wert
- * @param maxPages wie viele 50er-Seiten maximal geholt werden
  */
 export async function searchTracksByGenre(
   genreQuery: string,
   minPopularity: number,
-  maxPages = 5,
 ): Promise<Track[]> {
-  const collected = new Map<string, Track>()
-  // Bevorzugt exakter Genre-Filter; bei 400 (nicht unterstuetzt) freie Suche.
+  // Erst die passende Query auf Seite 0 ermitteln: bevorzugt exakter
+  // Genre-Filter, bei 400 (nicht unterstuetzt) freie Suche.
   let query = `genre:"${genreQuery}"`
-  let useGenreFilter = true
-
-  for (let page = 0; page < maxPages; page++) {
-    let res: SpotifySearchResponse
-    try {
-      res = await searchTrackPage(query, page * 50)
-    } catch (e) {
-      // Genre-Filter nicht unterstuetzt -> auf freie Suche umstellen und neu.
-      if (useGenreFilter && e instanceof ApiError && e.status === 400) {
-        useGenreFilter = false
-        query = genreQuery
-        page = -1
-        continue
-      }
-      if (page === 0) throw e
-      break // spaetere Seite fehlgeschlagen -> mit bisherigen Treffern weiter
+  let firstPage: SpotifySearchResponse
+  try {
+    firstPage = await searchTrackPage(query, 0)
+  } catch (e) {
+    if (e instanceof ApiError && e.status === 400) {
+      query = genreQuery
+      firstPage = await searchTrackPage(query, 0) // freie Suche als Fallback
+    } else {
+      throw e
     }
+  }
 
-    const items = res.tracks?.items ?? []
-    for (const t of items) {
+  // Restliche Seiten parallel holen (fehlertolerant).
+  const rest = await Promise.allSettled(
+    Array.from({ length: SEARCH_PAGES - 1 }, (_, i) =>
+      searchTrackPage(query, (i + 1) * SEARCH_PAGE_SIZE),
+    ),
+  )
+
+  const pages: SpotifySearchResponse[] = [firstPage]
+  for (const r of rest) if (r.status === 'fulfilled') pages.push(r.value)
+
+  // Zusammenfuehren, nach Beliebtheit filtern, deduplizieren.
+  const collected = new Map<string, Track>()
+  for (const page of pages) {
+    for (const t of page.tracks?.items ?? []) {
       if (!isUsableTrack(t)) continue
       if ((t.popularity ?? 0) < minPopularity) continue
       if (!collected.has(t.id as string)) collected.set(t.id as string, mapTrack(t))
     }
-
-    if (!res.tracks?.next || items.length === 0) break
   }
 
   return [...collected.values()]
