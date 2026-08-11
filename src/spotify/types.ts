@@ -46,7 +46,9 @@ export interface SpotifyRawPlaylist {
   id: string
   name: string
   images: SpotifyImage[] | null
-  tracks: { total: number }
+  // Spotify liefert die Anzahl je nach API-Antwort unter "tracks" ODER "items".
+  tracks?: { total: number }
+  items?: { total: number }
   owner: { display_name: string | null; id: string }
 }
 

@@ -113,7 +113,8 @@ export async function fetchPlaylists(currentUserId: string | null): Promise<Play
         id: raw.id,
         name: raw.name || 'Unbenannte Playlist',
         imageUrl: firstImageUrl(raw.images),
-        trackCount: raw.tracks?.total ?? 0,
+        // Spotify liefert die Songzahl je nach Antwort unter "tracks" oder "items".
+        trackCount: raw.tracks?.total ?? raw.items?.total ?? 0,
         ownerName: raw.owner?.display_name ?? '',
         ownerId,
         // Ohne bekannte User-ID: nur Spotify-eigene Listen als "nicht eigen" werten.
