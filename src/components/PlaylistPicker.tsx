@@ -8,6 +8,7 @@ interface PlaylistPickerProps {
   onSelect: (playlist: Playlist) => void
   onDiscover: () => void
   onArtists: () => void
+  onAlbums: () => void
   onCancel?: () => void
 }
 
@@ -18,6 +19,7 @@ export function PlaylistPicker({
   onSelect,
   onDiscover,
   onArtists,
+  onAlbums,
   onCancel,
 }: PlaylistPickerProps) {
   return (
@@ -49,6 +51,15 @@ export function PlaylistPicker({
           <span className="discover-banner-text">
             <span className="discover-banner-title">Nach Artist</span>
             <span className="discover-banner-hint">Zufällige Songs bestimmter Artists</span>
+          </span>
+          <span className="discover-banner-arrow">→</span>
+        </button>
+
+        <button className="discover-banner" onClick={onAlbums}>
+          <span className="discover-banner-emoji">💿</span>
+          <span className="discover-banner-text">
+            <span className="discover-banner-title">Nach Album</span>
+            <span className="discover-banner-hint">Zufällige Songs aus bestimmten Alben</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>

@@ -6,6 +6,7 @@ import {
   fetchCurrentUserId,
   fetchPlaylists,
   fetchPlaylistTracks,
+  searchTracksByAlbum,
   searchTracksByArtist,
   searchTracksByGenre,
 } from './spotify/api'
@@ -14,10 +15,16 @@ import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
   loadActivePlaylist,
+  loadAlbumLimit,
+  loadAlbumNames,
+  loadArtistLimit,
   loadArtistNames,
   loadDrawnIds,
   loadExcludedIds,
   saveActivePlaylist,
+  saveAlbumLimit,
+  saveAlbumNames,
+  saveArtistLimit,
   saveArtistNames,
   saveDrawnIds,
   saveExcludedIds,
@@ -36,13 +43,33 @@ import { ErrorToast } from './components/ErrorToast'
 import { SettingsPanel } from './components/SettingsPanel'
 import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
-import { ArtistPicker } from './components/ArtistPicker'
+import { ChipQueryPicker } from './components/ChipQueryPicker'
 import { GearIcon } from './components/icons'
 
-type View = 'home' | 'picker' | 'discover' | 'artist' | 'roulette' | 'result' | 'manage'
+type View = 'home' | 'picker' | 'discover' | 'artist' | 'album' | 'roulette' | 'result' | 'manage'
 
 const DISCOVER_PREFIX = 'discover:'
 const ARTIST_PREFIX = 'artist:'
+const ALBUM_PREFIX = 'album:'
+
+const ARTIST_SUGGESTIONS = [
+  'Taylor Swift',
+  'Ed Sheeran',
+  'Queen',
+  'ABBA',
+  'Michael Jackson',
+  'Rihanna',
+  'Coldplay',
+  'Die Ärzte',
+]
+const ALBUM_SUGGESTIONS = [
+  'Thriller',
+  '25',
+  'Rumours',
+  '÷ (Divide)',
+  'Back in Black',
+  '1989',
+]
 
 /** Baut eine synthetische "Playlist" für eine Entdecken-Auswahl. */
 function makeDiscoverPlaylist(genre: Genre): Playlist {
@@ -62,6 +89,19 @@ function makeArtistPlaylist(names: string[]): Playlist {
   return {
     id: `${ARTIST_PREFIX}${names.join('|')}`,
     name: names.length === 1 ? `🎙️ ${names[0]}` : `🎙️ ${names.length} Artists`,
+    imageUrl: null,
+    trackCount: 0,
+    ownerName: names.join(', '),
+    ownerId: '',
+    isOwn: true,
+  }
+}
+
+/** Baut eine synthetische "Playlist" für eine Album-Auswahl. */
+function makeAlbumPlaylist(names: string[]): Playlist {
+  return {
+    id: `${ALBUM_PREFIX}${names.join('|')}`,
+    name: names.length === 1 ? `💿 ${names[0]}` : `💿 ${names.length} Alben`,
     imageUrl: null,
     trackCount: 0,
     ownerName: names.join(', '),
@@ -111,8 +151,11 @@ export function App() {
   )
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  // Zuletzt genutzte Artists (Artist-Modus)
+  // Zuletzt genutzte Artists/Alben + Limits (Entdeckungs-Modi)
   const [artistNames, setArtistNames] = useState<string[]>(() => loadArtistNames())
+  const [artistLimit, setArtistLimit] = useState<number>(() => loadArtistLimit())
+  const [albumNames, setAlbumNames] = useState<string[]>(() => loadAlbumNames())
+  const [albumLimit, setAlbumLimit] = useState<number>(() => loadAlbumLimit())
 
   // Ziehbarer Pool = alle Tracks ohne die manuell entfernten.
   const pool = useMemo(() => tracks.filter((t) => !excludedIds.has(t.id)), [tracks, excludedIds])
@@ -153,6 +196,8 @@ export function App() {
           let msg = 'Diese Playlist enthält keine abspielbaren Songs. Bitte eine andere wählen.'
           if (pl.id.startsWith(ARTIST_PREFIX))
             msg = 'Für diese Artists wurden keine Songs gefunden. Prüfe die Schreibweise.'
+          else if (pl.id.startsWith(ALBUM_PREFIX))
+            msg = 'Für diese Alben wurden keine Songs gefunden. Prüfe die Schreibweise.'
           else if (pl.id.startsWith(DISCOVER_PREFIX))
             msg = 'Keine Songs für dieses Genre gefunden. Versuch ein anderes Genre.'
           showError(msg)
@@ -182,11 +227,14 @@ export function App() {
     }
   }
 
-  /** Lädt Tracks je nach Quelle: Playlist, Entdecken (Genre) oder Artist. */
+  /** Lädt Tracks je nach Quelle: Playlist, Genre, Artist oder Album. */
   function loadTracksFor(pl: Playlist): Promise<Track[]> {
     if (pl.id.startsWith(ARTIST_PREFIX)) {
-      // Namen aus dem Storage (mit der aktiven Artist-Playlist gespeichert).
-      return searchTracksByArtist(loadArtistNames())
+      // Namen + Limit aus dem Storage (mit der aktiven Quelle gespeichert).
+      return searchTracksByArtist(loadArtistNames(), loadArtistLimit())
+    }
+    if (pl.id.startsWith(ALBUM_PREFIX)) {
+      return searchTracksByAlbum(loadAlbumNames(), loadAlbumLimit())
     }
     if (pl.id.startsWith(DISCOVER_PREFIX)) {
       const query = pl.id.slice(DISCOVER_PREFIX.length)
@@ -252,10 +300,27 @@ export function App() {
   }, [])
 
   // ── Artist-Modus: Artists als Quelle wählen ──
-  const selectArtists = useCallback((names: string[]) => {
+  const selectArtists = useCallback((names: string[], limit: number) => {
     setArtistNames(names)
+    setArtistLimit(limit)
     saveArtistNames(names) // vor dem Laden speichern (loadTracksFor liest sie)
+    saveArtistLimit(limit)
     const pl = makeArtistPlaylist(names)
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    setView('home')
+  }, [])
+
+  // ── Album-Modus: Alben als Quelle wählen ──
+  const selectAlbums = useCallback((names: string[], limit: number) => {
+    setAlbumNames(names)
+    setAlbumLimit(limit)
+    saveAlbumNames(names)
+    saveAlbumLimit(limit)
+    const pl = makeAlbumPlaylist(names)
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
     setDrawnIds(loadDrawnIds(pl.id))
@@ -369,10 +434,31 @@ export function App() {
     )
   } else if (view === 'artist') {
     content = (
-      <ArtistPicker
+      <ChipQueryPicker
+        title="Songs nach Artist"
+        subtitle="Füge Artists hinzu – gezogen werden zufällige Songs von ihnen."
+        itemNoun="Artist"
+        placeholder="Artist eingeben, z. B. Adele"
+        suggestions={ARTIST_SUGGESTIONS}
+        initialItems={artistNames}
+        initialLimit={artistLimit}
         loading={tracksLoading}
-        initialArtists={artistNames}
         onStart={selectArtists}
+        onCancel={() => setView('picker')}
+      />
+    )
+  } else if (view === 'album') {
+    content = (
+      <ChipQueryPicker
+        title="Songs nach Album"
+        subtitle="Füge Alben hinzu – gezogen werden zufällige Songs daraus."
+        itemNoun="Album"
+        placeholder="Album eingeben, z. B. Thriller"
+        suggestions={ALBUM_SUGGESTIONS}
+        initialItems={albumNames}
+        initialLimit={albumLimit}
+        loading={tracksLoading}
+        onStart={selectAlbums}
         onCancel={() => setView('picker')}
       />
     )
@@ -384,6 +470,7 @@ export function App() {
         onSelect={selectPlaylist}
         onDiscover={() => setView('discover')}
         onArtists={() => setView('artist')}
+        onAlbums={() => setView('album')}
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )

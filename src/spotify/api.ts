@@ -305,33 +305,57 @@ export async function searchTracksByGenre(
   )
 }
 
+/** Zufällige n Elemente (Fisher-Yates). n <= 0 gibt alle unverändert zurück. */
+function sampleN<T>(arr: T[], n: number): T[] {
+  if (n <= 0 || arr.length <= n) return arr
+  const a = arr.slice()
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a.slice(0, n)
+}
+
 /** true, wenn `name` bei den Artists des Tracks (unscharf) vorkommt. */
 function artistMatches(t: SpotifyRawTrack, name: string): boolean {
   const needle = name.trim().toLowerCase()
   return (t.artists ?? []).some((a) => a.name.toLowerCase().includes(needle))
 }
 
-/**
- * Sucht zufällige Songs bestimmter Artists im Spotify-Katalog. Für jeden
- * Artist wird mit `artist:"Name"` gesucht, die Ergebnisse werden (unscharf
- * gegen den Namen gefiltert und) über alle Artists zusammengeführt.
- *
- * @param artists Liste von Artist-Namen
- */
-export async function searchTracksByArtist(artists: string[]): Promise<Track[]> {
-  const names = artists.map((a) => a.trim()).filter(Boolean)
-  if (names.length === 0) throw new ApiError('Bitte mindestens einen Artist angeben.')
+/** true, wenn `name` (unscharf) im Albumnamen des Tracks vorkommt. */
+function albumMatches(t: SpotifyRawTrack, name: string): boolean {
+  return (t.album?.name ?? '').toLowerCase().includes(name.trim().toLowerCase())
+}
 
-  // Anfragen begrenzen: bei vielen Artists weniger Seiten pro Artist.
-  const pagesPerArtist = names.length > 3 ? 6 : 10
+/**
+ * Generische Katalog-Suche über einen Feld-Filter (`artist:` oder `album:`).
+ * Für jeden Namen wird gesucht, unscharf gefiltert, optional auf `perLimit`
+ * zufällig begrenzt und über alle Namen dedupliziert zusammengeführt.
+ *
+ * @param field Spotify-Suchfeld
+ * @param rawNames Liste von Namen (Artists bzw. Alben)
+ * @param perLimit max. Songs pro Name (<= 0 = unbegrenzt)
+ * @param matches unscharfer Namensabgleich
+ */
+async function searchTracksByField(
+  field: 'artist' | 'album',
+  rawNames: string[],
+  perLimit: number,
+  matches: (t: SpotifyRawTrack, name: string) => boolean,
+): Promise<Track[]> {
+  const names = rawNames.map((a) => a.trim()).filter(Boolean)
+  if (names.length === 0) throw new ApiError('Bitte mindestens einen Eintrag angeben.')
+
+  // Anfragen begrenzen; bei einem knappen Limit reichen weniger Seiten.
+  let pagesPer = names.length > 3 ? 6 : 10
+  if (perLimit > 0) pagesPer = Math.min(pagesPer, Math.ceil((perLimit * 2) / SEARCH_PAGE_SIZE) + 1)
+
   const combined = new Map<string, Track>()
 
   for (const name of names) {
-    const query = `artist:"${name}"`
+    const query = `${field}:"${name}"`
     const results = await Promise.allSettled(
-      Array.from({ length: pagesPerArtist }, (_, i) =>
-        searchTrackPage(query, i * SEARCH_PAGE_SIZE),
-      ),
+      Array.from({ length: pagesPer }, (_, i) => searchTrackPage(query, i * SEARCH_PAGE_SIZE)),
     )
 
     const raw = new Map<string, Track>()
@@ -342,27 +366,57 @@ export async function searchTracksByArtist(artists: string[]): Promise<Track[]> 
         if (!isUsableTrack(t)) continue
         const id = t.id as string
         raw.set(id, mapTrack(t))
-        if (artistMatches(t, name)) strict.set(id, mapTrack(t))
+        if (matches(t, name)) strict.set(id, mapTrack(t))
       }
     }
 
-    // Bevorzugt die exakt passenden Treffer; sonst die Roh-Treffer (z. B. bei
-    // leicht abweichender Schreibweise).
-    const chosen = strict.size > 0 ? strict : raw
-    for (const [id, track] of chosen) if (!combined.has(id)) combined.set(id, track)
+    // Bevorzugt exakt passende Treffer; sonst Roh-Treffer (abweichende Schreibweise).
+    const chosen = sampleN([...(strict.size > 0 ? strict : raw).values()], perLimit)
+    for (const track of chosen) if (!combined.has(track.id)) combined.set(track.id, track)
   }
 
-  console.info(`[Artists] ${names.join(', ')} – ${combined.size} Songs`)
+  console.info(`[${field}] ${names.join(', ')} (max ${perLimit || '∞'}/Name) – ${combined.size} Songs`)
+  return [...combined.values()]
+}
 
-  if (combined.size === 0) {
+/**
+ * Zufällige Songs bestimmter Artists (max. `perArtistLimit` pro Artist,
+ * 0 = unbegrenzt).
+ */
+export async function searchTracksByArtist(
+  artists: string[],
+  perArtistLimit = 0,
+): Promise<Track[]> {
+  const tracks = await searchTracksByField('artist', artists, perArtistLimit, artistMatches)
+  if (tracks.length === 0) {
     throw new ApiError(
-      `Für ${names.length > 1 ? 'diese Artists' : `„${names[0]}“`} wurden keine Songs ` +
-        `gefunden. Prüfe die Schreibweise. Hinweis: Der Artist-Modus nutzt die ` +
+      `Für ${artists.length > 1 ? 'diese Artists' : `„${artists[0] ?? ''}“`} wurden keine ` +
+        `Songs gefunden. Prüfe die Schreibweise. Hinweis: Der Artist-Modus nutzt die ` +
         `Spotify-Katalog-Suche – im Development Mode kann diese eingeschränkt sein ` +
         `(dann hilft „Extended Quota Mode“ im Dashboard).`,
     )
   }
-  return [...combined.values()]
+  return tracks
+}
+
+/**
+ * Zufällige Songs bestimmter Alben (max. `perAlbumLimit` pro Album,
+ * 0 = unbegrenzt).
+ */
+export async function searchTracksByAlbum(
+  albums: string[],
+  perAlbumLimit = 0,
+): Promise<Track[]> {
+  const tracks = await searchTracksByField('album', albums, perAlbumLimit, albumMatches)
+  if (tracks.length === 0) {
+    throw new ApiError(
+      `Für ${albums.length > 1 ? 'diese Alben' : `„${albums[0] ?? ''}“`} wurden keine ` +
+        `Songs gefunden. Prüfe die Schreibweise (Tipp: „Album – Artist“ hilft bei ` +
+        `häufigen Titeln). Der Album-Modus nutzt die Spotify-Katalog-Suche und kann ` +
+        `im Development Mode eingeschränkt sein.`,
+    )
+  }
+  return tracks
 }
 
 /** Wandelt einen Fehler beim Track-Laden in eine klare, handlungsleitende Meldung. */

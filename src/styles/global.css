@@ -1350,7 +1350,7 @@ code {
 }
 .discover-banners {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 12px;
   margin-bottom: 24px;
 }
@@ -1445,6 +1445,43 @@ code {
   border-color: var(--accent);
   color: var(--text);
   background: var(--surface-hover);
+}
+.limit-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 4px;
+}
+.limit-label {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.limit-chips {
+  display: inline-flex;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.limit-chip {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: background 0.15s, color 0.15s;
+}
+.limit-chip:hover {
+  color: var(--text);
+}
+.limit-chip-active {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  color: #0a0a12;
 }
 
 @media (max-width: 640px) {

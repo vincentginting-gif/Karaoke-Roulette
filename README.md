@@ -14,10 +14,12 @@ Case-Opening-artigen **Roulette-Animation** präsentiert.
 - **Spotify-Login** via Authorization Code Flow **mit PKCE** – komplett im Browser,
   **kein Backend, kein Client Secret**.
 - **Playlist-Auswahl** aus deinen eigenen Spotify-Playlists (mit Cover & Songzahl).
-- **Entdecken-Modus:** Songs aus dem gesamten Spotify-Katalog nach **Genre**
-  (Pop, HipHop, Jazz …) – ohne eigene Playlist. (Ein Beliebtheits-Filter wäre
-  möglich, benötigt aber Spotifys „Extended Quota Mode“ – im Development Mode
-  liefert Spotify keine `popularity`-Werte.)
+- **Entdecken-Modi:** Songs aus dem gesamten Spotify-Katalog – ohne eigene
+  Playlist – nach **Genre** (Pop, HipHop, Jazz …), nach **Artist** (zufällige
+  Songs bestimmter Artists) oder nach **Album** (zufällige Songs aus bestimmten
+  Alben). Bei Artist/Album lässt sich die Anzahl **Songs pro Eintrag** begrenzen
+  (5 / 10 / 20 / alle). Nutzt die Spotify-Katalog-Suche – im Development Mode
+  ggf. eingeschränkt (dann hilft „Extended Quota Mode“ im Dashboard).
 - **Deterministische Roulette-Animation** (~6 s, 60 fps) im Stil eines Case-Openings:
   Der Gewinner steht *vor* dem Start fest, die Animation läuft sanft darauf zu und
   landet exakt unter dem Marker – unabhängig von Frame-Rate oder Timing.

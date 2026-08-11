@@ -13,8 +13,11 @@ const KEYS = {
   drawnPrefix: 'kr.drawn.',
   // Manuell entfernte (nicht ziehbare) Songs, ebenfalls pro Playlist.
   excludedPrefix: 'kr.excluded.',
-  // Zuletzt genutzte Artist-Liste (Artist-Modus).
+  // Zuletzt genutzte Artist-/Album-Listen + Limits (Entdeckungs-Modi).
   artists: 'kr.artists',
+  artistLimit: 'kr.artists.limit',
+  albums: 'kr.albums',
+  albumLimit: 'kr.albums.limit',
 } as const
 
 function safeGet(key: string): string | null {
@@ -101,10 +104,10 @@ export function saveExcludedIds(playlistId: string, ids: Set<string>): void {
   safeSet(KEYS.excludedPrefix + playlistId, JSON.stringify([...ids]))
 }
 
-// ── Artist-Modus: zuletzt genutzte Artists ───────────────────
+// ── Entdeckungs-Modi: zuletzt genutzte Namen + Limits ────────
 
-export function loadArtistNames(): string[] {
-  const raw = safeGet(KEYS.artists)
+function loadNames(key: string): string[] {
+  const raw = safeGet(key)
   if (!raw) return []
   try {
     const arr = JSON.parse(raw) as string[]
@@ -114,6 +117,35 @@ export function loadArtistNames(): string[] {
   }
 }
 
+function loadLimit(key: string, fallback: number): number {
+  const raw = safeGet(key)
+  if (raw === null) return fallback
+  const n = Number(raw)
+  return Number.isFinite(n) && n >= 0 ? n : fallback
+}
+
+export function loadArtistNames(): string[] {
+  return loadNames(KEYS.artists)
+}
 export function saveArtistNames(names: string[]): void {
   safeSet(KEYS.artists, JSON.stringify(names))
+}
+export function loadArtistLimit(): number {
+  return loadLimit(KEYS.artistLimit, 10)
+}
+export function saveArtistLimit(limit: number): void {
+  safeSet(KEYS.artistLimit, String(limit))
+}
+
+export function loadAlbumNames(): string[] {
+  return loadNames(KEYS.albums)
+}
+export function saveAlbumNames(names: string[]): void {
+  safeSet(KEYS.albums, JSON.stringify(names))
+}
+export function loadAlbumLimit(): number {
+  return loadLimit(KEYS.albumLimit, 0)
+}
+export function saveAlbumLimit(limit: number): void {
+  safeSet(KEYS.albumLimit, String(limit))
 }
