@@ -10,6 +10,7 @@ import type {
   SpotifyPagingResponse,
   SpotifyRawPlaylist,
   SpotifyRawTrack,
+  SpotifySearchResponse,
   Track,
 } from './types'
 
@@ -167,6 +168,22 @@ export async function fetchPlaylistTracks(playlist: Playlist): Promise<Track[]> 
   }
 }
 
+/** Normalisiert ein rohes Spotify-Track-Objekt in unser Domain-Modell. */
+function mapTrack(t: SpotifyRawTrack): Track {
+  return {
+    id: t.id as string,
+    title: t.name || 'Unbekannter Titel',
+    artist: t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
+    coverUrl: firstImageUrl(t.album?.images),
+    spotifyUrl: t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`,
+  }
+}
+
+/** true, wenn ein Roh-Track spielbar/verwendbar ist. */
+function isUsableTrack(t: SpotifyRawTrack | null | undefined): t is SpotifyRawTrack {
+  return Boolean(t && t.id && !t.is_local && t.type !== 'episode')
+}
+
 /** Laedt und normalisiert die Eintraege eines Playlist-Endpoints (mit Pagination). */
 async function loadItems(startUrl: string): Promise<Track[]> {
   const tracks: Track[] = []
@@ -178,25 +195,70 @@ async function loadItems(startUrl: string): Promise<Track[]> {
     for (const entry of page.items) {
       // Neuer Wrapper "item", alter "track" – beides abdecken.
       const t = entry?.item ?? entry?.track
-      // Ungueltige, lokale oder nicht abspielbare Eintraege ueberspringen.
-      if (!t || !t.id || t.is_local || t.type === 'episode') continue
-
-      const spotifyUrl = t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`
-
-      tracks.push({
-        id: t.id,
-        title: t.name || 'Unbekannter Titel',
-        artist:
-          t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
-        coverUrl: firstImageUrl(t.album?.images),
-        spotifyUrl,
-      })
+      if (!isUsableTrack(t)) continue
+      tracks.push(mapTrack(t))
     }
 
     url = page.next ? page.next.replace(API_BASE, '') : null
   }
 
   return tracks
+}
+
+// ── Entdecken: Songs aus dem Spotify-Katalog per Suche ───────
+
+/** Eine Seite Track-Suche holen (mit optionalem Genre-Filter). */
+async function searchTrackPage(q: string, offset: number): Promise<SpotifySearchResponse> {
+  const url = `/search?type=track&limit=50&offset=${offset}&q=${encodeURIComponent(q)}`
+  return apiFetch<SpotifySearchResponse>(url)
+}
+
+/**
+ * Sucht Tracks eines Genres im gesamten Spotify-Katalog und filtert nach
+ * Mindest-Beliebtheit (0–100). Nutzt den /search-Endpoint (der die im
+ * Nov. 2024 abgeschaltete Recommendations-API ersetzt).
+ *
+ * @param genreQuery Genre-Begriff (z. B. "hip hop", "jazz")
+ * @param minPopularity nur Tracks mit popularity >= diesem Wert
+ * @param maxPages wie viele 50er-Seiten maximal geholt werden
+ */
+export async function searchTracksByGenre(
+  genreQuery: string,
+  minPopularity: number,
+  maxPages = 5,
+): Promise<Track[]> {
+  const collected = new Map<string, Track>()
+  // Bevorzugt exakter Genre-Filter; bei 400 (nicht unterstuetzt) freie Suche.
+  let query = `genre:"${genreQuery}"`
+  let useGenreFilter = true
+
+  for (let page = 0; page < maxPages; page++) {
+    let res: SpotifySearchResponse
+    try {
+      res = await searchTrackPage(query, page * 50)
+    } catch (e) {
+      // Genre-Filter nicht unterstuetzt -> auf freie Suche umstellen und neu.
+      if (useGenreFilter && e instanceof ApiError && e.status === 400) {
+        useGenreFilter = false
+        query = genreQuery
+        page = -1
+        continue
+      }
+      if (page === 0) throw e
+      break // spaetere Seite fehlgeschlagen -> mit bisherigen Treffern weiter
+    }
+
+    const items = res.tracks?.items ?? []
+    for (const t of items) {
+      if (!isUsableTrack(t)) continue
+      if ((t.popularity ?? 0) < minPopularity) continue
+      if (!collected.has(t.id as string)) collected.set(t.id as string, mapTrack(t))
+    }
+
+    if (!res.tracks?.next || items.length === 0) break
+  }
+
+  return [...collected.values()]
 }
 
 /** Wandelt einen Fehler beim Track-Laden in eine klare, handlungsleitende Meldung. */

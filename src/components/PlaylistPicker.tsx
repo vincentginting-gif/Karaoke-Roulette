@@ -6,11 +6,12 @@ interface PlaylistPickerProps {
   playlists: Playlist[]
   loading: boolean
   onSelect: (playlist: Playlist) => void
+  onDiscover: () => void
   onCancel?: () => void
 }
 
 /** Auswahl-Grid der Nutzer-Playlists. */
-export function PlaylistPicker({ playlists, loading, onSelect, onCancel }: PlaylistPickerProps) {
+export function PlaylistPicker({ playlists, loading, onSelect, onDiscover, onCancel }: PlaylistPickerProps) {
   return (
     <section className="stage fade-in">
       <header className="picker-header">
@@ -24,6 +25,17 @@ export function PlaylistPicker({ playlists, loading, onSelect, onCancel }: Playl
           </button>
         )}
       </header>
+
+      <button className="discover-banner" onClick={onDiscover}>
+        <span className="discover-banner-emoji">🎧</span>
+        <span className="discover-banner-text">
+          <span className="discover-banner-title">Oder nach Genre entdecken</span>
+          <span className="discover-banner-hint">
+            Songs aus ganz Spotify – nach Genre & Beliebtheit
+          </span>
+        </span>
+        <span className="discover-banner-arrow">→</span>
+      </button>
 
       {loading ? (
         <Spinner label="Playlists werden geladen…" />

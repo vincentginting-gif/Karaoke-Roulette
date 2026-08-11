@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { isConfigured } from './spotify/auth'
-import { ApiError, fetchCurrentUserId, fetchPlaylists, fetchPlaylistTracks } from './spotify/api'
+import {
+  ApiError,
+  fetchCurrentUserId,
+  fetchPlaylists,
+  fetchPlaylistTracks,
+  searchTracksByGenre,
+} from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
+import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
   loadActivePlaylist,
@@ -25,9 +32,25 @@ import { Spinner } from './components/Spinner'
 import { ErrorToast } from './components/ErrorToast'
 import { SettingsPanel } from './components/SettingsPanel'
 import { SongManager } from './components/SongManager'
+import { DiscoverPicker } from './components/DiscoverPicker'
 import { GearIcon } from './components/icons'
 
-type View = 'home' | 'picker' | 'roulette' | 'result' | 'manage'
+type View = 'home' | 'picker' | 'discover' | 'roulette' | 'result' | 'manage'
+
+/** Baut eine synthetische "Playlist" fuer eine Entdecken-Auswahl. */
+function makeDiscoverPlaylist(genre: Genre, minPop: number): Playlist {
+  return {
+    id: `discover:${genre.query}:${minPop}`,
+    name: `${genre.emoji} ${genre.label}`,
+    imageUrl: null,
+    trackCount: 0,
+    ownerName: 'Spotify-Katalog',
+    ownerId: '',
+    isOwn: true,
+  }
+}
+
+const DISCOVER_PREFIX = 'discover:'
 
 const SOUND_KEY = 'kr.sound.enabled'
 const SURPRISE_KEY = 'kr.surprise.enabled'
@@ -102,11 +125,15 @@ export function App() {
       setTracksLoading(true)
       setError(null)
       try {
-        const loaded = await fetchPlaylistTracks(pl)
+        const loaded = await loadTracksFor(pl)
         if (cancelled) return
         setTracks(loaded)
         if (loaded.length === 0) {
-          showError('Diese Playlist enthaelt keine abspielbaren Songs. Bitte eine andere waehlen.')
+          showError(
+            pl.id.startsWith(DISCOVER_PREFIX)
+              ? 'Keine Songs für dieses Genre mit dieser Beliebtheit gefunden. Versuch eine niedrigere Beliebtheit.'
+              : 'Diese Playlist enthaelt keine abspielbaren Songs. Bitte eine andere waehlen.',
+          )
         }
       } catch (e) {
         if (cancelled) return
@@ -131,6 +158,15 @@ export function App() {
     } else {
       setError('Ein unerwarteter Fehler ist aufgetreten.')
     }
+  }
+
+  /** Laedt Tracks je nach Quelle: echte Playlist oder Entdecken (Suche). */
+  function loadTracksFor(pl: Playlist): Promise<Track[]> {
+    if (pl.id.startsWith(DISCOVER_PREFIX)) {
+      const [, query = '', minPop = '0'] = pl.id.split(':')
+      return searchTracksByGenre(query, Number(minPop))
+    }
+    return fetchPlaylistTracks(pl)
   }
 
   // ── Playlists laden (fuer Picker) ──
@@ -176,6 +212,17 @@ export function App() {
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
     setView('home')
+  }, [])
+
+  // ── Entdecken: Genre + Beliebtheit als Quelle waehlen ──
+  const selectDiscover = useCallback((genre: Genre, minPop: number) => {
+    const pl = makeDiscoverPlaylist(genre, minPop)
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    setView('home') // Home zeigt den Spinner, waehrend die Suche laedt
   }, [])
 
   // ── Song ziehen (Roulette starten) ──
@@ -273,12 +320,21 @@ export function App() {
     content = <Spinner label="Verbindung wird geprueft…" />
   } else if (auth.status === 'disconnected') {
     content = <ConnectSpotify onConnect={auth.connect} />
+  } else if (view === 'discover') {
+    content = (
+      <DiscoverPicker
+        loading={tracksLoading}
+        onStart={selectDiscover}
+        onCancel={() => setView('picker')}
+      />
+    )
   } else if (view === 'picker' || !activePlaylist) {
     content = (
       <PlaylistPicker
         playlists={playlists}
         loading={playlistsLoading}
         onSelect={selectPlaylist}
+        onDiscover={() => setView('discover')}
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )

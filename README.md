@@ -14,13 +14,18 @@ Case-Opening-artigen **Roulette-Animation** präsentiert.
 - **Spotify-Login** via Authorization Code Flow **mit PKCE** – komplett im Browser,
   **kein Backend, kein Client Secret**.
 - **Playlist-Auswahl** aus deinen eigenen Spotify-Playlists (mit Cover & Songzahl).
-- **Deterministische Roulette-Animation** (~5 s, 60 fps): Der Gewinner steht *vor*
-  dem Start fest, die Animation läuft sanft (Quintic-Ease-Out) darauf zu und landet
-  exakt unter dem Marker – unabhängig von Frame-Rate oder Timing.
+- **Entdecken-Modus:** Songs aus dem gesamten Spotify-Katalog nach **Genre**
+  (Pop, HipHop, Jazz …) und **Beliebtheit** (Regler 0–100) – ohne eigene Playlist.
+- **Deterministische Roulette-Animation** (~6 s, 60 fps) im Stil eines Case-Openings:
+  Der Gewinner steht *vor* dem Start fest, die Animation läuft sanft darauf zu und
+  landet exakt unter dem Marker – unabhängig von Frame-Rate oder Timing.
 - **Ergebnis-Screen** mit großem Cover, Titel, Artist und Button *Auf Spotify öffnen*.
 - **Keine Wiederholung:** bereits gezogene Songs werden vermieden; sind alle einmal
-  dran gewesen, wird der Pool automatisch zurückgesetzt. Zustand liegt **persistent
-  im `localStorage`** (pro Playlist).
+  dran gewesen, wird der Pool automatisch zurückgesetzt. Ein **Reset-Button** holt
+  sie jederzeit zurück. Zustand liegt **persistent im `localStorage`** (pro Quelle).
+- **Songs verwalten:** einzelne Songs lokal aus dem Pool entfernen (nicht ziehbar),
+  ohne die Spotify-Playlist zu ändern.
+- **Überraschungs-Modus:** Cover & Titel im Roulette verstecken – volle Überraschung.
 - **Dezente Sound- & Haptik-Effekte** (abschaltbar), respektiert
   `prefers-reduced-motion`.
 - Robuste **Fehlerbehandlung** (keine Verbindung, Auth fehlgeschlagen, leere Playlist,

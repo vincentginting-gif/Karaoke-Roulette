@@ -60,10 +60,21 @@ export interface SpotifyRawTrack {
   external_urls: { spotify?: string }
   is_local?: boolean
   type?: string
+  /** Beliebtheit 0–100 (bei Such-Ergebnissen vorhanden). */
+  popularity?: number
 }
 
 export interface SpotifyPagingResponse<T> {
   items: T[]
   next: string | null
   total: number
+}
+
+/** Antwort des /search-Endpoints (nur Track-Teil). */
+export interface SpotifySearchResponse {
+  tracks?: {
+    items: SpotifyRawTrack[]
+    next: string | null
+    total: number
+  }
 }
