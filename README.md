@@ -93,6 +93,15 @@ npm run typecheck  # TypeScript prüfen
 
 ---
 
+## 📱 Aufs Handy / online stellen
+
+`http://127.0.0.1:5173` läuft nur auf dem PC selbst. Um Karaoke Roulette auf dem
+**Handy** (oder von überall) zu nutzen, deploye die App kostenlos auf **Vercel** –
+die App wählt die Spotify-Redirect-URI dann automatisch passend zur Domain.
+Schritt-für-Schritt-Anleitung: **[`DEPLOY.md`](./DEPLOY.md)**.
+
+---
+
 ## 🔐 Spotify Setup (einmalig, ~3 Minuten)
 
 Diese App braucht **nur eine Client-ID** – **kein** Client Secret.
