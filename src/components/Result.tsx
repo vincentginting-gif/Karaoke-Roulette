@@ -9,7 +9,7 @@ interface ResultProps {
   onChangePlaylist: () => void
 }
 
-/** Ergebnisbereich – prominente Praesentation des Gewinner-Songs. */
+/** Ergebnisbereich – prominente Präsentation des Gewinner-Songs. */
 export function Result({ track, onAgain, onOpenSpotify, onChangePlaylist }: ResultProps) {
   return (
     <section className="stage stage-center result result-in">

@@ -16,12 +16,12 @@ export function PlaylistPicker({ playlists, loading, onSelect, onDiscover, onCan
     <section className="stage fade-in">
       <header className="picker-header">
         <div>
-          <h2 className="picker-title">Waehle deine Karaoke-Playlist</h2>
+          <h2 className="picker-title">Wähle deine Karaoke-Playlist</h2>
           <p className="picker-subtitle">Aus dieser Playlist wird gezogen.</p>
         </div>
         {onCancel && (
           <button className="btn btn-ghost" onClick={onCancel}>
-            Zurueck
+            Zurück
           </button>
         )}
       </header>
@@ -53,7 +53,7 @@ export function PlaylistPicker({ playlists, loading, onSelect, onDiscover, onCan
                 title={
                   pl.isOwn
                     ? pl.name
-                    : `${pl.name} – von Spotify erstellt, ueber die API evtl. nicht ladbar`
+                    : `${pl.name} – von Spotify erstellt, über die API evtl. nicht ladbar`
                 }
               >
                 <div className="playlist-cover-wrap">

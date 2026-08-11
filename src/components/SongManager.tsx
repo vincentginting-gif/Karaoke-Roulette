@@ -11,7 +11,7 @@ interface SongManagerProps {
 
 /**
  * Liste aller Songs der Playlist. Entfernte Songs werden nicht mehr gezogen
- * (rein lokal – die Spotify-Playlist selbst bleibt unveraendert).
+ * (rein lokal – die Spotify-Playlist selbst bleibt unverändert).
  */
 export function SongManager({
   playlistName,

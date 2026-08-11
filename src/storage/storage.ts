@@ -9,7 +9,7 @@ import type { Playlist } from '../spotify/types'
 
 const KEYS = {
   activePlaylist: 'kr.playlist.active',
-  // History wird pro Playlist gespeichert -> Praefix + Playlist-ID.
+  // History wird pro Playlist gespeichert -> Präfix + Playlist-ID.
   drawnPrefix: 'kr.drawn.',
   // Manuell entfernte (nicht ziehbare) Songs, ebenfalls pro Playlist.
   excludedPrefix: 'kr.excluded.',
@@ -27,7 +27,7 @@ function safeSet(key: string, value: string): void {
   try {
     localStorage.setItem(key, value)
   } catch {
-    // localStorage kann voll/deaktiviert sein -> App laeuft trotzdem weiter.
+    // localStorage kann voll/deaktiviert sein -> App läuft trotzdem weiter.
   }
 }
 
@@ -57,7 +57,7 @@ export function clearActivePlaylist(): void {
 
 // ── Bereits gezogene Songs (No-Repeat) ───────────────────────
 
-/** Liefert das Set der bereits gezogenen Track-IDs fuer eine Playlist. */
+/** Liefert das Set der bereits gezogenen Track-IDs für eine Playlist. */
 export function loadDrawnIds(playlistId: string): Set<string> {
   const raw = safeGet(KEYS.drawnPrefix + playlistId)
   if (!raw) return new Set()
@@ -83,7 +83,7 @@ export function clearDrawnIds(playlistId: string): void {
 
 // ── Manuell entfernte Songs (nicht ziehbar) ──────────────────
 
-/** Liefert das Set der manuell entfernten Track-IDs fuer eine Playlist. */
+/** Liefert das Set der manuell entfernten Track-IDs für eine Playlist. */
 export function loadExcludedIds(playlistId: string): Set<string> {
   const raw = safeGet(KEYS.excludedPrefix + playlistId)
   if (!raw) return new Set()

@@ -1,4 +1,4 @@
-// Inline-SVG-Icons (keine externen Assets, faerben ueber currentColor).
+// Inline-SVG-Icons (keine externen Assets, färben über currentColor).
 
 export function MicIcon({ className }: { className?: string }) {
   return (

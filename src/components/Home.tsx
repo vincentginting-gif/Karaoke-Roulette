@@ -11,7 +11,7 @@ interface HomeProps {
   total: number
 }
 
-/** Startseite nach Verbindung + Playlist-Auswahl: der grosse Button. */
+/** Startseite nach Verbindung + Playlist-Auswahl: der große Button. */
 export function Home({ playlist, onSpin, onChangePlaylist, onReset, remaining, total }: HomeProps) {
   const drawn = total - remaining
   return (
@@ -35,7 +35,7 @@ export function Home({ playlist, onSpin, onChangePlaylist, onReset, remaining, t
 
       <button className="btn btn-primary btn-spin glow-strong" onClick={onSpin}>
         <DiceIcon className="btn-icon" />
-        Song auswaehlen
+        Song auswählen
       </button>
 
       <button className="btn btn-ghost" onClick={onChangePlaylist}>

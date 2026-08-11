@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────
 //  Spotify Web API – Datenzugriff (Playlists & Tracks)
 //
-//  Kapselt alle HTTP-Aufrufe. Gibt saubere Domain-Objekte zurueck.
+//  Kapselt alle HTTP-Aufrufe. Gibt saubere Domain-Objekte zurück.
 // ─────────────────────────────────────────────────────────────
 
 import { clearTokens, getValidAccessToken } from './auth'
@@ -16,13 +16,13 @@ import type {
 
 const API_BASE = 'https://api.spotify.com/v1'
 
-/** Fehlerklasse fuer API-Probleme, damit die UI sie klar behandeln kann. */
+/** Fehlerklasse für API-Probleme, damit die UI sie klar behandeln kann. */
 export class ApiError extends Error {
   constructor(
     message: string,
-    /** true, wenn die Sitzung ungueltig ist und ein neuer Login noetig ist. */
+    /** true, wenn die Sitzung ungültig ist und ein neuer Login nötig ist. */
     public readonly needsReauth = false,
-    /** HTTP-Status (0 = Netzwerkfehler), fuer gezielte Behandlung. */
+    /** HTTP-Status (0 = Netzwerkfehler), für gezielte Behandlung. */
     public readonly status = 0,
   ) {
     super(message)
@@ -52,12 +52,12 @@ async function apiFetch<T>(path: string): Promise<T> {
     return (await res.json()) as T
   }
 
-  // Fuer die Diagnose die Antwort des Servers mitloggen (hilft bei 403 etc.).
+  // Für die Diagnose die Antwort des Servers mitloggen (hilft bei 403 etc.).
   const bodyText = await res.text().catch(() => '')
   console.warn('[Spotify API] Fehler', res.status, path, bodyText.slice(0, 300))
 
   if (res.status === 401) {
-    // Token ungueltig -> Sitzung verwerfen.
+    // Token ungültig -> Sitzung verwerfen.
     clearTokens()
     throw new ApiError('Sitzung abgelaufen. Bitte erneut mit Spotify verbinden.', true, 401)
   }
@@ -77,7 +77,7 @@ async function apiFetch<T>(path: string): Promise<T> {
   throw new ApiError(`Spotify-Anfrage fehlgeschlagen (Status ${res.status}).`, false, res.status)
 }
 
-/** Liefert die Spotify-User-ID des angemeldeten Nutzers (fuer Besitz-Erkennung). */
+/** Liefert die Spotify-User-ID des angemeldeten Nutzers (für Besitz-Erkennung). */
 export async function fetchCurrentUserId(): Promise<string | null> {
   try {
     const me = await apiFetch<{ id: string }>('/me')
@@ -88,7 +88,7 @@ export async function fetchCurrentUserId(): Promise<string | null> {
   }
 }
 
-/** Waehlt das erste (groesste) Bild aus einer Spotify-Image-Liste. */
+/** Wählt das erste (größte) Bild aus einer Spotify-Image-Liste. */
 function firstImageUrl(images: { url: string }[] | null | undefined): string | null {
   return images && images.length > 0 ? images[0].url : null
 }
@@ -96,7 +96,7 @@ function firstImageUrl(images: { url: string }[] | null | undefined): string | n
 // ── Playlists laden ──────────────────────────────────────────
 
 /**
- * Laedt alle Playlists des angemeldeten Nutzers (mit Pagination).
+ * Lädt alle Playlists des angemeldeten Nutzers (mit Pagination).
  * @param currentUserId eigene User-ID, um "eigene" Playlists zu markieren.
  */
 export async function fetchPlaylists(currentUserId: string | null): Promise<Playlist[]> {
@@ -107,7 +107,7 @@ export async function fetchPlaylists(currentUserId: string | null): Promise<Play
     const page: SpotifyPagingResponse<SpotifyRawPlaylist> = await apiFetch(url)
 
     for (const raw of page.items) {
-      // Spotify kann in seltenen Faellen null-Eintraege liefern.
+      // Spotify kann in seltenen Fällen null-Einträge liefern.
       if (!raw || !raw.id) continue
       const ownerId = raw.owner?.id ?? ''
       playlists.push({
@@ -127,36 +127,36 @@ export async function fetchPlaylists(currentUserId: string | null): Promise<Play
     url = page.next ? page.next.replace(API_BASE, '') : null
   }
 
-  // Eigene Playlists zuerst (die sind ueber die API zuverlaessig ladbar).
+  // Eigene Playlists zuerst (die sind über die API zuverlässig ladbar).
   playlists.sort((a, b) => Number(b.isOwn) - Number(a.isOwn))
   return playlists
 }
 
 // ── Tracks einer Playlist laden ──────────────────────────────
 
-// Ein Eintrag der Playlist. Seit der Spotify-API-Migration (Feb. 2026) heisst
-// der Wrapper "item" statt "track" – wir unterstuetzen beide Varianten.
+// Ein Eintrag der Playlist. Seit der Spotify-API-Migration (Feb. 2026) heißt
+// der Wrapper "item" statt "track" – wir unterstützen beide Varianten.
 interface PlaylistItem {
   item?: SpotifyRawTrack | null
   track?: SpotifyRawTrack | null
 }
 
 /**
- * Laedt alle spielbaren Tracks einer Playlist (mit Pagination).
- * Filtert lokale Dateien und ungueltige Eintraege heraus.
+ * Lädt alle spielbaren Tracks einer Playlist (mit Pagination).
+ * Filtert lokale Dateien und ungültige Einträge heraus.
  *
- * Nutzt den aktuellen Endpoint GET /playlists/{id}/items. Der fruehere
+ * Nutzt den aktuellen Endpoint GET /playlists/{id}/items. Der frühere
  * /tracks-Endpoint wurde von Spotify im Feb. 2026 entfernt und liefert 403.
- * Faellt auf /tracks zurueck, falls /items (aeltere API) nicht existiert (404).
+ * Fällt auf /tracks zurück, falls /items (ältere API) nicht existiert (404).
  *
- * Wichtige Spotify-Einschraenkung: Inhalte gibt es nur fuer EIGENE Playlists
+ * Wichtige Spotify-Einschränkung: Inhalte gibt es nur für EIGENE Playlists
  * (oder wo man Mitbearbeiter ist). Fremde Listen liefern 403.
  */
 export async function fetchPlaylistTracks(playlist: Playlist): Promise<Track[]> {
   try {
     return await loadItems(`/playlists/${playlist.id}/items?limit=100`)
   } catch (e) {
-    // Aeltere API kennt /items evtl. nicht -> auf den alten Endpoint zurueckfallen.
+    // Aeltere API kennt /items evtl. nicht -> auf den alten Endpoint zurückfallen.
     if (e instanceof ApiError && e.status === 404) {
       try {
         return await loadItems(`/playlists/${playlist.id}/tracks?limit=100`)
@@ -184,7 +184,7 @@ function isUsableTrack(t: SpotifyRawTrack | null | undefined): t is SpotifyRawTr
   return Boolean(t && t.id && !t.is_local && t.type !== 'episode')
 }
 
-/** Laedt und normalisiert die Eintraege eines Playlist-Endpoints (mit Pagination). */
+/** Lädt und normalisiert die Einträge eines Playlist-Endpoints (mit Pagination). */
 async function loadItems(startUrl: string): Promise<Track[]> {
   const tracks: Track[] = []
   let url: string | null = startUrl
@@ -229,7 +229,7 @@ export async function searchTracksByGenre(
   genreQuery: string,
   minPopularity: number,
 ): Promise<Track[]> {
-  // Seite 0 mit einer Query holen; bei 400 (Filter nicht unterstuetzt) -> null.
+  // Seite 0 mit einer Query holen; bei 400 (Filter nicht unterstützt) -> null.
   const tryFirst = async (q: string): Promise<SpotifySearchResponse | null> => {
     try {
       return await searchTrackPage(q, 0)
@@ -286,7 +286,7 @@ export async function searchTracksByGenre(
 
   // Nichts nach Filter – Ursache unterscheiden:
   if (allRaw.size > 0 && withPopularity === 0) {
-    // Spotify liefert fuer diese App keine Beliebtheit -> Filter ignorieren.
+    // Spotify liefert für diese App keine Beliebtheit -> Filter ignorieren.
     console.info('[Entdecken] Keine Beliebtheits-Daten verfügbar – Regler wird ignoriert.')
     return [...allRaw.values()]
   }
@@ -308,9 +308,9 @@ function describeTrackError(e: unknown, playlist: Playlist): unknown {
   if (e instanceof ApiError && (e.status === 403 || e.status === 404)) {
     if (!playlist.isOwn) {
       return new ApiError(
-        `»${playlist.name}« gehoert nicht deinem Konto. Seit der Spotify-Migration ` +
+        `»${playlist.name}« gehört nicht deinem Konto. Seit der Spotify-Migration ` +
           `(Feb. 2026) lassen sich nur noch Playlists laden, die du selbst erstellt hast ` +
-          `(oder bei denen du Mitbearbeiter bist). Bitte waehle eine eigene Playlist.`,
+          `(oder bei denen du Mitbearbeiter bist). Bitte wähle eine eigene Playlist.`,
         false,
         e.status,
       )
@@ -318,7 +318,7 @@ function describeTrackError(e: unknown, playlist: Playlist): unknown {
     return new ApiError(
       `»${playlist.name}« konnte nicht geladen werden (${e.status}). Falls das bei allen ` +
         `eigenen Playlists passiert: Ist dein Account im Spotify-Dashboard unter ` +
-        `„User Management“ hinzugefuegt? Danach „Spotify trennen“ und neu verbinden.`,
+        `„User Management“ hinzugefügt? Danach „Spotify trennen“ und neu verbinden.`,
       false,
       e.status,
     )

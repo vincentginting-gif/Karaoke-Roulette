@@ -2,27 +2,27 @@
 //  Roulette-Engine – Gewinner-Auswahl & Strip-Aufbau
 //
 //  Reine Logik, kein DOM. Der Gewinner wird IMMER vor der Animation
-//  bestimmt (deterministisch), die Animation laeuft nur darauf zu.
+//  bestimmt (deterministisch), die Animation läuft nur darauf zu.
 // ─────────────────────────────────────────────────────────────
 
 import type { Track } from '../spotify/types'
 
-/** Position der Gewinnerkarte im Strip (von hinten gezaehlt genug Puffer). */
+/** Position der Gewinnerkarte im Strip (von hinten gezählt genug Puffer). */
 export const WINNER_INDEX = 45
-/** Gesamtlaenge des Strips in Karten. */
+/** Gesamtlänge des Strips in Karten. */
 export const STRIP_LENGTH = 55
 
 /**
- * Waehlt einen Gewinner-Track unter Beruecksichtigung bereits gezogener Songs.
+ * Wählt einen Gewinner-Track unter Berücksichtigung bereits gezogener Songs.
  *
  * Regeln:
- *  - Songs aus `drawnIds` werden zunaechst vermieden.
- *  - Sind alle Songs gezogen, wird die Liste effektiv zurueckgesetzt
+ *  - Songs aus `drawnIds` werden zunächst vermieden.
+ *  - Sind alle Songs gezogen, wird die Liste effektiv zurückgesetzt
  *    (Auswahl aus dem gesamten Pool) und der Aufrufer sollte `reset` beachten.
  *  - Der zuletzt gezogene Song (`lastId`) wird nie direkt erneut gezogen,
  *    solange es Alternativen gibt.
  *
- * @returns Gewinner-Track und ob die History zurueckgesetzt wurde.
+ * @returns Gewinner-Track und ob die History zurückgesetzt wurde.
  */
 export function pickWinner(
   tracks: Track[],
@@ -40,13 +40,13 @@ export function pickWinner(
   let candidates = tracks.filter((t) => !drawnIds.has(t.id))
   let didReset = false
 
-  // Alle Songs schon gezogen -> Pool zuruecksetzen.
+  // Alle Songs schon gezogen -> Pool zurücksetzen.
   if (candidates.length === 0) {
     candidates = tracks
     didReset = true
   }
 
-  // Den zuletzt gezogenen Song vermeiden, wenn moeglich.
+  // Den zuletzt gezogenen Song vermeiden, wenn möglich.
   if (lastId) {
     const withoutLast = candidates.filter((t) => t.id !== lastId)
     if (withoutLast.length > 0) candidates = withoutLast
@@ -57,9 +57,9 @@ export function pickWinner(
 }
 
 /**
- * Baut den sichtbaren Karten-Strip fuer die Animation.
+ * Baut den sichtbaren Karten-Strip für die Animation.
  * Der Gewinner sitzt an fester Position (WINNER_INDEX), der Rest wird
- * zufaellig mit Fuellern aus dem Pool befuellt (nur fuer die Optik).
+ * zufällig mit Füllern aus dem Pool befüllt (nur für die Optik).
  */
 export function buildStrip(tracks: Track[], winner: Track): Track[] {
   const strip: Track[] = []
@@ -73,7 +73,7 @@ export function buildStrip(tracks: Track[], winner: Track): Track[] {
   return strip
 }
 
-/** Kryptografisch zufaelliger Index (gleichverteilt genug fuer diesen Zweck). */
+/** Kryptografisch zufälliger Index (gleichverteilt genug für diesen Zweck). */
 function randomIndex(length: number): number {
   const buf = new Uint32Array(1)
   crypto.getRandomValues(buf)

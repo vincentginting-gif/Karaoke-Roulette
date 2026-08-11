@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
-//  Kuratierte Genres fuer den Entdecken-Modus.
-//  `query` ist der Begriff fuer den Spotify-Genre-Suchfilter.
+//  Kuratierte Genres für den Entdecken-Modus.
+//  `query` ist der Begriff für den Spotify-Genre-Suchfilter.
 // ─────────────────────────────────────────────────────────────
 
 export interface Genre {

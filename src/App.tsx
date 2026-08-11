@@ -37,7 +37,7 @@ import { GearIcon } from './components/icons'
 
 type View = 'home' | 'picker' | 'discover' | 'roulette' | 'result' | 'manage'
 
-/** Baut eine synthetische "Playlist" fuer eine Entdecken-Auswahl. */
+/** Baut eine synthetische "Playlist" für eine Entdecken-Auswahl. */
 function makeDiscoverPlaylist(genre: Genre): Playlist {
   return {
     id: `discover:${genre.query}`,
@@ -70,7 +70,7 @@ export function App() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [tracksLoading, setTracksLoading] = useState(false)
 
-  // Eigene Spotify-User-ID (fuer Besitz-Erkennung der Playlists)
+  // Eigene Spotify-User-ID (für Besitz-Erkennung der Playlists)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   // No-Repeat-Zustand
@@ -98,7 +98,7 @@ export function App() {
 
   const showError = useCallback((msg: string) => setError(msg), [])
 
-  // ── Fehler aus Auth-Hook uebernehmen ──
+  // ── Fehler aus Auth-Hook übernehmen ──
   useEffect(() => {
     if (auth.error) setError(auth.error)
   }, [auth.error])
@@ -132,7 +132,7 @@ export function App() {
           showError(
             pl.id.startsWith(DISCOVER_PREFIX)
               ? 'Keine Songs für dieses Genre mit dieser Beliebtheit gefunden. Versuch eine niedrigere Beliebtheit.'
-              : 'Diese Playlist enthaelt keine abspielbaren Songs. Bitte eine andere waehlen.',
+              : 'Diese Playlist enthält keine abspielbaren Songs. Bitte eine andere wählen.',
           )
         }
       } catch (e) {
@@ -160,7 +160,7 @@ export function App() {
     }
   }
 
-  /** Laedt Tracks je nach Quelle: echte Playlist oder Entdecken (Suche). */
+  /** Lädt Tracks je nach Quelle: echte Playlist oder Entdecken (Suche). */
   function loadTracksFor(pl: Playlist): Promise<Track[]> {
     if (pl.id.startsWith(DISCOVER_PREFIX)) {
       const [, query = '', minPop = '0'] = pl.id.split(':')
@@ -169,7 +169,7 @@ export function App() {
     return fetchPlaylistTracks(pl)
   }
 
-  // ── Playlists laden (fuer Picker) ──
+  // ── Playlists laden (für Picker) ──
   const loadPlaylists = useCallback(async () => {
     setPlaylistsLoading(true)
     setError(null)
@@ -214,7 +214,7 @@ export function App() {
     setView('home')
   }, [])
 
-  // ── Entdecken: Genre als Quelle waehlen ──
+  // ── Entdecken: Genre als Quelle wählen ──
   const selectDiscover = useCallback((genre: Genre) => {
     const pl = makeDiscoverPlaylist(genre)
     setActivePlaylist(pl)
@@ -222,7 +222,7 @@ export function App() {
     setDrawnIds(loadDrawnIds(pl.id))
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
-    setView('home') // Home zeigt den Spinner, waehrend die Suche laedt
+    setView('home') // Home zeigt den Spinner, während die Suche lädt
   }, [])
 
   // ── Song ziehen (Roulette starten) ──
@@ -230,7 +230,7 @@ export function App() {
     if (pool.length === 0) {
       showError(
         tracks.length === 0
-          ? 'Es sind keine Songs geladen. Bitte eine Playlist mit Songs waehlen.'
+          ? 'Es sind keine Songs geladen. Bitte eine Playlist mit Songs wählen.'
           : 'Alle Songs wurden aus dem Pool entfernt. Hole unter „Songs verwalten“ welche zurück.',
       )
       return
@@ -240,7 +240,7 @@ export function App() {
     try {
       const { winner: picked, didReset } = pickWinner(pool, drawnIds, lastWinnerId)
 
-      // No-Repeat-Zustand aktualisieren (ggf. zuruecksetzen).
+      // No-Repeat-Zustand aktualisieren (ggf. zurücksetzen).
       const nextDrawn = didReset ? new Set<string>() : new Set(drawnIds)
       nextDrawn.add(picked.id)
       setDrawnIds(nextDrawn)
@@ -250,18 +250,18 @@ export function App() {
       setStrip(buildStrip(pool, picked))
       setView('roulette')
     } catch {
-      showError('Song konnte nicht ausgewaehlt werden. Bitte erneut versuchen.')
+      showError('Song konnte nicht ausgewählt werden. Bitte erneut versuchen.')
     }
   }, [pool, tracks.length, drawnIds, lastWinnerId, activePlaylist, showError])
 
-  // ── Gezogene Songs zuruecksetzen (wieder in den Pool) ──
+  // ── Gezogene Songs zurücksetzen (wieder in den Pool) ──
   const resetDrawn = useCallback(() => {
     setDrawnIds(new Set())
     setLastWinnerId(null)
     if (activePlaylist) clearDrawnIds(activePlaylist.id)
   }, [activePlaylist])
 
-  // ── Song aus dem Pool entfernen / zurueckholen ──
+  // ── Song aus dem Pool entfernen / zurückholen ──
   const toggleExclude = useCallback(
     (trackId: string) => {
       setExcludedIds((prev) => {
@@ -317,7 +317,7 @@ export function App() {
   let content: React.ReactNode
 
   if (auth.status === 'checking') {
-    content = <Spinner label="Verbindung wird geprueft…" />
+    content = <Spinner label="Verbindung wird geprüft…" />
   } else if (auth.status === 'disconnected') {
     content = <ConnectSpotify onConnect={auth.connect} />
   } else if (view === 'discover') {
@@ -416,7 +416,7 @@ export function App() {
   )
 }
 
-// ── Layout-Huelle mit Header (Einstellungen) ──────────────────
+// ── Layout-Hülle mit Header (Einstellungen) ──────────────────
 
 interface ShellProps {
   children: React.ReactNode

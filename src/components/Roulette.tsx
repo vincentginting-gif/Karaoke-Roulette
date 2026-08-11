@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from 'react'
-// (useRef fuer stabile Callback-Refs, damit die Animation genau einmal laeuft)
+// (useRef für stabile Callback-Refs, damit die Animation genau einmal läuft)
 import type { Track } from '../spotify/types'
 import { easeOutCase } from '../roulette/easing'
 import { playStart, playStop, playTick } from '../roulette/audio'
@@ -12,29 +12,29 @@ interface RouletteProps {
   soundEnabled: boolean
   /** Ueberraschungs-Modus: Cover & Titel der Karten verbergen. */
   surprise: boolean
-  /** Wird aufgerufen, wenn die Animation vollstaendig gestoppt ist. */
+  /** Wird aufgerufen, wenn die Animation vollständig gestoppt ist. */
   onComplete: () => void
 }
 
 const DURATION_MS = 5800
 
 /**
- * Das Herzstueck: eine deterministische, frame-rate-unabhaengige
+ * Das Herzstück: eine deterministische, frame-rate-unabhängige
  * Case-Opening-artige Roulette-Animation.
  *
  * Der Gewinner steht vor dem Start fest (via winnerIndex). Die Animation
  * berechnet die Zielposition, die den Gewinner exakt unter dem Marker
- * zentriert, und faehrt per Quintic-Ease-Out (schnell -> langsam -> STOP)
- * ueber ~5s dorthin. Da die Position aus der verstrichenen Zeit berechnet
+ * zentriert, und fährt per Quintic-Ease-Out (schnell -> langsam -> STOP)
+ * über ~5s dorthin. Da die Position aus der verstrichenen Zeit berechnet
  * wird (nicht aus Frame-Inkrementen), landet IMMER derselbe Song –
- * unabhaengig von der Bildwiederholrate.
+ * unabhängig von der Bildwiederholrate.
  */
 export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplete }: RouletteProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
   // Aktuellste Callback-/Flag-Werte in Refs halten, damit der Effekt NICHT
-  // von ihrer Identitaet abhaengt und die Animation genau EINMAL laeuft
+  // von ihrer Identität abhängt und die Animation genau EINMAL läuft
   // (kein Neustart bei Re-Renders des Parents).
   const onCompleteRef = useRef(onComplete)
   onCompleteRef.current = onComplete
@@ -126,7 +126,7 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
       window.clearTimeout(timeoutId)
     }
     // Bewusst nur [strip, winnerIndex]: die Animation soll pro Ziehung
-    // genau einmal starten. soundEnabled/onComplete werden ueber Refs gelesen.
+    // genau einmal starten. soundEnabled/onComplete werden über Refs gelesen.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [strip, winnerIndex])
 
@@ -135,13 +135,13 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
       <p className="roulette-hint">{surprise ? 'Große Überraschung …' : 'Welcher Song kommt?'}</p>
 
       <div className="roulette-viewport" ref={viewportRef}>
-        {/* Fester Marker in der Mitte: eine saubere Linie mit buendigen Pfeilen */}
+        {/* Fester Marker in der Mitte: eine saubere Linie mit bündigen Pfeilen */}
         <div className="roulette-marker" aria-hidden="true">
           <span className="marker-arrow marker-arrow-top" />
           <span className="marker-arrow marker-arrow-bottom" />
         </div>
 
-        {/* Randverlauf fuer Tiefe */}
+        {/* Randverlauf für Tiefe */}
         <div className="roulette-fade roulette-fade-left" aria-hidden="true" />
         <div className="roulette-fade roulette-fade-right" aria-hidden="true" />
 

@@ -9,9 +9,9 @@ export interface Playlist {
   imageUrl: string | null
   trackCount: number
   ownerName: string
-  /** Spotify-User-ID des Besitzers (z. B. "spotify" fuer Spotify-eigene Listen). */
+  /** Spotify-User-ID des Besitzers (z. B. "spotify" für Spotify-eigene Listen). */
   ownerId: string
-  /** true, wenn die Liste dem angemeldeten Nutzer gehoert (via Web API ladbar). */
+  /** true, wenn die Liste dem angemeldeten Nutzer gehört (via Web API ladbar). */
   isOwn: boolean
 }
 
@@ -30,7 +30,7 @@ export interface Track {
 export interface AuthTokens {
   accessToken: string
   refreshToken: string
-  /** Unix-Timestamp (ms), wann der accessToken ablaeuft. */
+  /** Unix-Timestamp (ms), wann der accessToken abläuft. */
   expiresAt: number
 }
 

@@ -1,15 +1,15 @@
 // ─────────────────────────────────────────────────────────────
-//  Sound- & Haptik-Feedback fuer das Roulette (WebAudio, keine Assets)
+//  Sound- & Haptik-Feedback für das Roulette (WebAudio, keine Assets)
 //
 //  Nachempfunden dem CS:GO-"Case Opening": ein knackiger Tick, wenn eine
 //  Karte am Marker vorbeizieht (dicht am Anfang, immer weiter auseinander
 //  gegen Ende), ein kurzer Start-Whoosh und ein befriedigender Reveal-Sound.
-//  Alles fehlertolerant – wenn Audio nicht geht, laeuft die App normal.
+//  Alles fehlertolerant – wenn Audio nicht geht, läuft die App normal.
 // ─────────────────────────────────────────────────────────────
 
 let ctx: AudioContext | null = null
 let noiseBuffer: AudioBuffer | null = null
-// Gemeinsame Lautstaerke, damit die Ticks nicht uebersteuern.
+// Gemeinsame Lautstärke, damit die Ticks nicht übersteuern.
 let master: GainNode | null = null
 
 function getCtx(): AudioContext | null {
@@ -72,7 +72,7 @@ export function playTick(): void {
     src.start(now)
     src.stop(now + 0.04)
 
-    // Winzige Klick-Kante fuer mehr "Anschlag".
+    // Winzige Klick-Kante für mehr "Anschlag".
     const o = ac.createOscillator()
     const og = ac.createGain()
     o.type = 'square'
@@ -153,7 +153,7 @@ export function playStop(): void {
     /* ignore */
   }
 
-  // Haptisches Feedback (mobil), wenn verfuegbar.
+  // Haptisches Feedback (mobil), wenn verfügbar.
   try {
     navigator.vibrate?.(60)
   } catch {

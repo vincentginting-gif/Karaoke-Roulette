@@ -30,7 +30,7 @@ export function useAuth(): UseAuth {
     let cancelled = false
 
     async function init() {
-      // Fall 1: Wir kommen gerade vom Spotify-Redirect zurueck.
+      // Fall 1: Wir kommen gerade vom Spotify-Redirect zurück.
       if (isAuthCallback()) {
         try {
           await handleCallback()
@@ -41,13 +41,13 @@ export function useAuth(): UseAuth {
             setError(e instanceof AuthError ? e.message : 'Anmeldung fehlgeschlagen.')
           }
         } finally {
-          // URL saeubern (Code aus der Adresszeile entfernen).
+          // URL säubern (Code aus der Adresszeile entfernen).
           window.history.replaceState({}, '', window.location.pathname === '/callback' ? '/' : window.location.pathname)
         }
         return
       }
 
-      // Fall 2: Normaler Start – vorhandene Sitzung pruefen.
+      // Fall 2: Normaler Start – vorhandene Sitzung prüfen.
       if (!cancelled) setStatus(isLoggedIn() ? 'connected' : 'disconnected')
     }
 

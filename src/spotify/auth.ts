@@ -36,7 +36,7 @@ function getClientId(): string {
   return id
 }
 
-/** true, wenn eine Client-ID konfiguriert ist (fuer Setup-Hinweise in der UI). */
+/** true, wenn eine Client-ID konfiguriert ist (für Setup-Hinweise in der UI). */
 export function isConfigured(): boolean {
   const id = import.meta.env.VITE_SPOTIFY_CLIENT_ID
   return Boolean(id) && id !== 'hier_deine_client_id_eintragen'
@@ -105,7 +105,7 @@ export async function login(): Promise<void> {
   const verifier = randomString(64)
   const challenge = base64UrlEncode(await sha256(verifier))
 
-  // Verifier fuer den Callback zwischenspeichern.
+  // Verifier für den Callback zwischenspeichern.
   localStorage.setItem(STORAGE_KEYS.verifier, verifier)
 
   const params = new URLSearchParams({
@@ -123,8 +123,8 @@ export async function login(): Promise<void> {
 // ── Callback: Code gegen Token tauschen ──────────────────────
 
 /**
- * Prueft, ob die aktuelle URL ein OAuth-Callback ist
- * (enthaelt ?code=... oder ?error=...).
+ * Prüft, ob die aktuelle URL ein OAuth-Callback ist
+ * (enthält ?code=... oder ?error=...).
  */
 export function isAuthCallback(): boolean {
   const params = new URLSearchParams(window.location.search)
@@ -132,13 +132,13 @@ export function isAuthCallback(): boolean {
 }
 
 // Merkt sich den laufenden/erledigten Code-Austausch. Verhindert, dass der
-// Spotify-Autorisierungs-Code (nur EINMAL verwendbar) doppelt eingeloest wird –
-// z. B. durch das doppelte Ausfuehren von Effects im React StrictMode (Dev).
+// Spotify-Autorisierungs-Code (nur EINMAL verwendbar) doppelt eingelöst wird –
+// z. B. durch das doppelte Ausführen von Effects im React StrictMode (Dev).
 let callbackPromise: Promise<void> | null = null
 
 /**
  * Verarbeitet den OAuth-Callback: tauscht den Code gegen Tokens.
- * Idempotent – mehrfaches Aufrufen loest denselben Austausch nur einmal aus.
+ * Idempotent – mehrfaches Aufrufen löst denselben Austausch nur einmal aus.
  * Wirft AuthError bei Fehlern. Nach Erfolg sind Tokens gespeichert.
  */
 export function handleCallback(): Promise<void> {
@@ -180,11 +180,11 @@ async function exchangeCodeForTokens(): Promise<void> {
       body,
     })
   } catch {
-    throw new AuthError('Netzwerkfehler beim Anmelden. Bitte Verbindung pruefen.')
+    throw new AuthError('Netzwerkfehler beim Anmelden. Bitte Verbindung prüfen.')
   }
 
   if (!res.ok) {
-    // Echten Spotify-Fehler fuer die Diagnose ausgeben.
+    // Echten Spotify-Fehler für die Diagnose ausgeben.
     const bodyText = await res.text().catch(() => '')
     console.error('[Spotify Auth] Token-Austausch fehlgeschlagen', res.status, bodyText)
     let hint = ''
@@ -193,10 +193,10 @@ async function exchangeCodeForTokens(): Promise<void> {
         ' (Code bereits benutzt oder abgelaufen – bitte Login einfach erneut starten.)'
     } else if (bodyText.includes('redirect_uri')) {
       hint =
-        ' (Redirect-URI stimmt nicht mit dem Spotify-Dashboard ueberein – ' +
+        ' (Redirect-URI stimmt nicht mit dem Spotify-Dashboard überein – ' +
         'http://127.0.0.1:5173/callback muss dort exakt eingetragen sein.)'
     } else if (bodyText.includes('invalid_client')) {
-      hint = ' (Client-ID falsch – VITE_SPOTIFY_CLIENT_ID pruefen.)'
+      hint = ' (Client-ID falsch – VITE_SPOTIFY_CLIENT_ID prüfen.)'
     }
     throw new AuthError(`Token-Austausch mit Spotify fehlgeschlagen${hint}`)
   }
@@ -214,9 +214,9 @@ async function exchangeCodeForTokens(): Promise<void> {
 // ── Token Refresh ────────────────────────────────────────────
 
 /**
- * Liefert einen gueltigen Access-Token. Erneuert ihn bei Bedarf
- * automatisch ueber den Refresh-Token.
- * Wirft AuthError, wenn keine gueltige Sitzung (mehr) besteht.
+ * Liefert einen gültigen Access-Token. Erneuert ihn bei Bedarf
+ * automatisch über den Refresh-Token.
+ * Wirft AuthError, wenn keine gültige Sitzung (mehr) besteht.
  */
 export async function getValidAccessToken(): Promise<string> {
   const tokens = loadTokens()

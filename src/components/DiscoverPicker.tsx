@@ -8,7 +8,7 @@ interface DiscoverPickerProps {
   onCancel: () => void
 }
 
-/** Auswahl eines Genres fuer den Entdecken-Modus. */
+/** Auswahl eines Genres für den Entdecken-Modus. */
 export function DiscoverPicker({ loading, onStart, onCancel }: DiscoverPickerProps) {
   const [genre, setGenre] = useState<Genre | null>(null)
 
