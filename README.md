@@ -183,21 +183,25 @@ lebendig statt steril wirkt.
 
 ## 🛠️ Troubleshooting
 
-### „Spotify-Anfrage fehlgeschlagen (Status 403)“ beim Song auswählen
+### 403 „Forbidden“ beim Laden der Songs
 
-Das passiert, wenn die gewählte Playlist **von Spotify erstellt** wurde
-(Discover Weekly, Daily Mix, Release Radar, „Radio“- und Editorial-Playlists).
-Seit November 2024 lassen sich diese **nicht mehr über die Web API laden** – Spotify
-antwortet mit 403/404.
+Hintergrund: Mit der **Spotify-API-Migration (Feb. 2026)** wurde der alte Endpoint
+`GET /playlists/{id}/tracks` **entfernt** (liefert 403) und durch
+`GET /playlists/{id}/items` ersetzt. Diese App nutzt bereits den neuen Endpoint.
+
+Wichtige Einschränkung seit der Migration: Playlist-**Inhalte** gibt es nur noch für
+Playlists, die **dir selbst gehören** (oder bei denen du Mitbearbeiter bist). Fremde
+Playlists – auch solche, denen du nur folgst, sowie von Spotify erstellte
+(Discover Weekly, Daily Mix, Editorial) – liefern **403**.
 
 **Lösung:** Wähle eine Playlist, die **du selbst erstellt** hast. Im Playlist-Picker
-stehen deine eigenen Listen oben; von Spotify erstellte sind mit einem grünen
-**„Spotify“**-Badge markiert und funktionieren nicht.
+stehen deine eigenen Listen oben; fremde/Spotify-Listen sind mit einem grünen
+**„Spotify“**-Badge markiert.
 
 > Tipp: Lege in Spotify eine eigene Playlist „Karaoke“ an und füge ein paar Songs
-> hinzu – die funktioniert garantiert.
+> hinzu – die funktioniert.
 
-### 403 bei **allen** (auch eigenen) Playlists
+### 403 auch bei **eigenen** Playlists
 
 Dann ist dein Account vermutlich noch nicht für die App freigeschaltet
 (Development Mode). Im **[Dashboard](https://developer.spotify.com/dashboard)** →

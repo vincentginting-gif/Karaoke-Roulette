@@ -133,72 +133,91 @@ export async function fetchPlaylists(currentUserId: string | null): Promise<Play
 
 // ── Tracks einer Playlist laden ──────────────────────────────
 
+// Ein Eintrag der Playlist. Seit der Spotify-API-Migration (Feb. 2026) heisst
+// der Wrapper "item" statt "track" – wir unterstuetzen beide Varianten.
 interface PlaylistItem {
-  track: SpotifyRawTrack | null
+  item?: SpotifyRawTrack | null
+  track?: SpotifyRawTrack | null
 }
 
 /**
  * Laedt alle spielbaren Tracks einer Playlist (mit Pagination).
  * Filtert lokale Dateien und ungueltige Eintraege heraus.
  *
- * Bei 403/404 (typisch fuer Spotify-eigene/algorithmische Playlists, die seit
- * Nov. 2024 nicht mehr ueber die API zugaenglich sind) wird eine klare,
- * handlungsleitende Meldung geworfen.
+ * Nutzt den aktuellen Endpoint GET /playlists/{id}/items. Der fruehere
+ * /tracks-Endpoint wurde von Spotify im Feb. 2026 entfernt und liefert 403.
+ * Faellt auf /tracks zurueck, falls /items (aeltere API) nicht existiert (404).
+ *
+ * Wichtige Spotify-Einschraenkung: Inhalte gibt es nur fuer EIGENE Playlists
+ * (oder wo man Mitbearbeiter ist). Fremde Listen liefern 403.
  */
 export async function fetchPlaylistTracks(playlist: Playlist): Promise<Track[]> {
-  const tracks: Track[] = []
-  // Nur die benoetigten Felder anfordern (schneller, weniger Daten).
-  const fields =
-    'items(track(id,name,artists(name),album(images),external_urls,is_local,type)),next'
-  let url: string | null =
-    `/playlists/${playlist.id}/tracks?limit=100&fields=${encodeURIComponent(fields)}`
-
   try {
-    while (url) {
-      const page: SpotifyPagingResponse<PlaylistItem> = await apiFetch(url)
-
-      for (const item of page.items) {
-        const t = item?.track
-        // Ungueltige, lokale oder nicht abspielbare Eintraege ueberspringen.
-        if (!t || !t.id || t.is_local || t.type === 'episode') continue
-
-        const spotifyUrl =
-          t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`
-
-        tracks.push({
-          id: t.id,
-          title: t.name || 'Unbekannter Titel',
-          artist:
-            t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
-          coverUrl: firstImageUrl(t.album?.images),
-          spotifyUrl,
-        })
-      }
-
-      url = page.next ? page.next.replace(API_BASE, '') : null
-    }
+    return await loadItems(`/playlists/${playlist.id}/items?limit=100`)
   } catch (e) {
-    // 403/404 bei Spotify-eigenen Listen -> praezise Meldung.
-    if (e instanceof ApiError && (e.status === 403 || e.status === 404)) {
-      if (!playlist.isOwn) {
-        throw new ApiError(
-          `»${playlist.name}« wurde von Spotify erstellt (z. B. Discover Weekly, ` +
-            `Daily Mix, Radio, Editorial) und kann seit Nov. 2024 nicht mehr ueber die ` +
-            `API geladen werden. Bitte waehle eine Playlist, die du selbst erstellt hast.`,
-          false,
-          e.status,
-        )
+    // Aeltere API kennt /items evtl. nicht -> auf den alten Endpoint zurueckfallen.
+    if (e instanceof ApiError && e.status === 404) {
+      try {
+        return await loadItems(`/playlists/${playlist.id}/tracks?limit=100`)
+      } catch (e2) {
+        throw describeTrackError(e2, playlist)
       }
-      throw new ApiError(
-        `»${playlist.name}« konnte nicht geladen werden (${e.status}). Falls das bei allen ` +
-          `Playlists passiert: Ist dein Account im Spotify-Dashboard unter „User Management“ ` +
-          `hinzugefuegt? Danach „Spotify trennen“ und neu verbinden.`,
+    }
+    throw describeTrackError(e, playlist)
+  }
+}
+
+/** Laedt und normalisiert die Eintraege eines Playlist-Endpoints (mit Pagination). */
+async function loadItems(startUrl: string): Promise<Track[]> {
+  const tracks: Track[] = []
+  let url: string | null = startUrl
+
+  while (url) {
+    const page: SpotifyPagingResponse<PlaylistItem> = await apiFetch(url)
+
+    for (const entry of page.items) {
+      // Neuer Wrapper "item", alter "track" – beides abdecken.
+      const t = entry?.item ?? entry?.track
+      // Ungueltige, lokale oder nicht abspielbare Eintraege ueberspringen.
+      if (!t || !t.id || t.is_local || t.type === 'episode') continue
+
+      const spotifyUrl = t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`
+
+      tracks.push({
+        id: t.id,
+        title: t.name || 'Unbekannter Titel',
+        artist:
+          t.artists?.map((a) => a.name).filter(Boolean).join(', ') || 'Unbekannter Artist',
+        coverUrl: firstImageUrl(t.album?.images),
+        spotifyUrl,
+      })
+    }
+
+    url = page.next ? page.next.replace(API_BASE, '') : null
+  }
+
+  return tracks
+}
+
+/** Wandelt einen Fehler beim Track-Laden in eine klare, handlungsleitende Meldung. */
+function describeTrackError(e: unknown, playlist: Playlist): unknown {
+  if (e instanceof ApiError && (e.status === 403 || e.status === 404)) {
+    if (!playlist.isOwn) {
+      return new ApiError(
+        `»${playlist.name}« gehoert nicht deinem Konto. Seit der Spotify-Migration ` +
+          `(Feb. 2026) lassen sich nur noch Playlists laden, die du selbst erstellt hast ` +
+          `(oder bei denen du Mitbearbeiter bist). Bitte waehle eine eigene Playlist.`,
         false,
         e.status,
       )
     }
-    throw e
+    return new ApiError(
+      `»${playlist.name}« konnte nicht geladen werden (${e.status}). Falls das bei allen ` +
+        `eigenen Playlists passiert: Ist dein Account im Spotify-Dashboard unter ` +
+        `„User Management“ hinzugefuegt? Danach „Spotify trennen“ und neu verbinden.`,
+      false,
+      e.status,
+    )
   }
-
-  return tracks
+  return e
 }
