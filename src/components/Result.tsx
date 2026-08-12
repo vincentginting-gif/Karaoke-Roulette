@@ -16,9 +16,14 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
   const { t } = useI18n()
   const [links, setLinks] = useState<PlatformLink[]>([])
 
+  // Echte Spotify-Track-ID? (22 Base62-Zeichen). Offline-Songs haben keine –
+  // dann wird „Öffnen" zur Spotify-Suche und die Cross-Plattform-Links entfallen.
+  const isRealTrack = /^[A-Za-z0-9]{22}$/.test(track.id)
+
   // Best-Effort: direkte Links zu anderen Plattformen laden. Bei Fehler
   // (CORS/Netzwerk) bleibt es beim universellen „song.link"-Button.
   useEffect(() => {
+    if (!isRealTrack) return
     let cancelled = false
     setLinks([])
     fetchPlatformLinks(track.spotifyUrl)
@@ -31,7 +36,7 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
     return () => {
       cancelled = true
     }
-  }, [track.spotifyUrl])
+  }, [track.spotifyUrl, isRealTrack])
 
   return (
     <section className="stage stage-center result result-in">
@@ -53,7 +58,7 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
           rel="noopener noreferrer"
         >
           <ExternalIcon className="btn-icon" />
-          {t('result.open')}
+          {isRealTrack ? t('result.open') : t('result.search')}
         </a>
         <button className="btn btn-primary" onClick={onAgain}>
           <DiceIcon className="btn-icon" />
@@ -61,31 +66,33 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
         </button>
       </div>
 
-      <div className="result-cross">
-        <a
-          className="result-cross-main"
-          href={songlinkPageUrl(track.id)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          🌐 {t('result.openElsewhere')}
-        </a>
-        {links.length > 0 && (
-          <div className="result-cross-chips">
-            {links.map((l) => (
-              <a
-                key={l.key}
-                className="result-cross-chip"
-                href={l.url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {l.label}
-              </a>
-            ))}
-          </div>
-        )}
-      </div>
+      {isRealTrack && (
+        <div className="result-cross">
+          <a
+            className="result-cross-main"
+            href={songlinkPageUrl(track.id)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            🌐 {t('result.openElsewhere')}
+          </a>
+          {links.length > 0 && (
+            <div className="result-cross-chips">
+              {links.map((l) => (
+                <a
+                  key={l.key}
+                  className="result-cross-chip"
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <button className="btn btn-ghost result-switch" onClick={onChangePlaylist}>
         🔀 {t('result.switch')}

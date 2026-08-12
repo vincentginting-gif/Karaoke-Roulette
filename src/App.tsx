@@ -12,7 +12,7 @@ import {
   type CreatedPlaylist,
 } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
-import { parseImportedJson } from './spotify/convert'
+import { parseImportedJson, type ParsedLine } from './spotify/convert'
 import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
@@ -48,6 +48,7 @@ import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
 import { PlaylistConverter } from './components/PlaylistConverter'
+import { OfflineGuest } from './components/OfflineGuest'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
 import { useI18n } from './i18n/i18n'
@@ -59,6 +60,7 @@ type View =
   | 'artist'
   | 'album'
   | 'convert'
+  | 'offline'
   | 'roulette'
   | 'result'
   | 'manage'
@@ -68,6 +70,9 @@ const ARTIST_PREFIX = 'artist:'
 const ALBUM_PREFIX = 'album:'
 const CONVERT_PREFIX = 'convert:'
 const CONVERT_TRACKS_KEY = 'kr.convert.tracks'
+// Standard-Cover-Bild (2x2) für den Offline-Modus. Der Nutzer kann die Datei
+// public/guest-cover.jpg durch ein eigenes 2x2-Bild ersetzen.
+const OFFLINE_COVER_SRC = `${import.meta.env.BASE_URL}guest-cover.jpg`
 
 const ARTIST_SUGGESTIONS = [
   'Taylor Swift',
@@ -417,6 +422,37 @@ export function App() {
     setView('home')
   }, [])
 
+  // ── Offline-Modus: eingetippte Songs -> Roulette (kein Spotify) ──
+  const startOffline = useCallback((name: string, lines: ParsedLine[]) => {
+    const trks: Track[] = lines.map((p, i) => ({
+      id: `offline-${i}-${p.title}`,
+      title: p.title,
+      artist: p.artist || '—',
+      // Cover = zufälliger Quadrant des geteilten Bildes.
+      coverUrl: `quad:${Math.floor(Math.random() * 4)}:${OFFLINE_COVER_SRC}`,
+      // Kein echter Track: „Öffnen" wird zur Spotify-Suche (funktioniert ohne Login).
+      spotifyUrl: `https://open.spotify.com/search/${encodeURIComponent(
+        `${p.title} ${p.artist}`.trim(),
+      )}`,
+      album: '',
+      durationMs: 0,
+    }))
+    setConvertedTracks(trks)
+    try {
+      localStorage.setItem(CONVERT_TRACKS_KEY, JSON.stringify(trks))
+    } catch {
+      /* nicht kritisch */
+    }
+    const pl = makeConvertPlaylist(name || 'Party', trks.length)
+    setIsGuest(true) // wie Gast-Modus: umgeht Spotify-Login-Gates
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setDrawnIds(new Set())
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    setView('home')
+  }, [])
+
   // ── Gespeicherte JSON-Datei importieren (aus dem Picker) ──
   const importSongsFile = useCallback(
     async (file: File) => {
@@ -560,8 +596,8 @@ export function App() {
 
   // ── Rendering ──────────────────────────────────────────────
 
-  // Fehlende Client-ID nur melden, wenn es auch keinen Gast-Weg gibt.
-  if (!isConfigured() && !isGuest && !guestName) {
+  // Fehlende Client-ID nur melden, wenn es auch keinen Gast-/Offline-Weg gibt.
+  if (!isConfigured() && !isGuest && !guestName && view !== 'offline') {
     return (
       <Shell connected={false}>
         <ConfigNeeded />
@@ -575,7 +611,10 @@ export function App() {
 
   let content: React.ReactNode
 
-  if (auth.status === 'checking' && !isGuest) {
+  if (view === 'offline') {
+    // Offline-Modus: unabhängig vom Login-Status erreichbar.
+    content = <OfflineGuest onStart={startOffline} onCancel={() => setView('home')} />
+  } else if (auth.status === 'checking' && !isGuest) {
     content = <Spinner label={t('app.checking')} />
   } else if (auth.status === 'disconnected' && !isGuest) {
     content = (
@@ -585,6 +624,7 @@ export function App() {
         onStart={() => {}}
         guestAvailable={Boolean(guestName)}
         onGuest={selectGuest}
+        onOffline={() => setView('offline')}
       />
     )
   } else if (view === 'discover') {
@@ -647,6 +687,7 @@ export function App() {
         onAlbums={() => setView('album')}
         onConvert={() => setView('convert')}
         onImport={importSongsFile}
+        onOffline={() => setView('offline')}
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )

@@ -7,10 +7,12 @@ interface WelcomeProps {
   onStart: () => void
   guestAvailable?: boolean
   onGuest?: () => void
+  /** Offline-Modus starten (Songs eintippen, kein Spotify). */
+  onOffline?: () => void
 }
 
 /** Homepage / Landing: erklärt die App und führt zum Start. */
-export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest }: WelcomeProps) {
+export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest, onOffline }: WelcomeProps) {
   const { t } = useI18n()
   const steps = [t('welcome.step1'), t('welcome.step2'), t('welcome.step3')]
 
@@ -49,6 +51,12 @@ export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest
             <SpotifyIcon className="btn-icon" />
             {t('connect.button')}
           </button>
+          {onOffline && (
+            <button className="btn btn-primary" onClick={onOffline}>
+              <DiceIcon className="btn-icon" />
+              {t('welcome.offline')}
+            </button>
+          )}
           {guestAvailable && onGuest && (
             <button className="btn btn-ghost" onClick={onGuest}>
               <DiceIcon className="btn-icon" />
@@ -57,6 +65,7 @@ export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest
           )}
         </div>
       )}
+      {!connected && onOffline && <p className="welcome-offline-hint">{t('welcome.offlineHint')}</p>}
     </section>
   )
 }

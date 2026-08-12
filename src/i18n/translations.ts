@@ -188,6 +188,42 @@ export const translations: Record<string, Entry> = {
     en: 'Could not read the file. A saved “guest-playlist.json” is expected.',
     ko: '파일을 읽을 수 없습니다. 저장된 “guest-playlist.json”이 필요합니다.',
   },
+
+  // ── Offline-Gäste-Modus (kein Spotify) ──
+  'welcome.offline': { de: 'Ohne Spotify: Songs eintippen', en: 'No Spotify: type songs', ko: 'Spotify 없이: 노래 입력' },
+  'welcome.offlineHint': {
+    de: 'Kein Konto? Einfach Songs & Interpreten eintippen und losdrehen – die Cover werden zufällig vergeben.',
+    en: 'No account? Just type songs & artists and spin – covers are assigned randomly.',
+    ko: '계정이 없나요? 노래와 아티스트만 입력하고 돌리세요 – 커버는 무작위로 배정됩니다.',
+  },
+  'picker.offline.title': { de: 'Ohne Spotify eintippen', en: 'Type without Spotify', ko: 'Spotify 없이 입력' },
+  'picker.offline.hint': {
+    de: 'Songs & Interpreten selbst eintippen und spinnen',
+    en: 'Type songs & artists yourself and spin',
+    ko: '노래와 아티스트를 직접 입력하고 돌리기',
+  },
+  'offline.title': { de: 'Ohne Spotify spielen', en: 'Play without Spotify', ko: 'Spotify 없이 플레이' },
+  'offline.subtitle': {
+    de: 'Songs & Interpreten eintippen und sofort spinnen – kein Login, keine echten Cover.',
+    en: 'Type songs & artists and spin right away – no login, no real covers.',
+    ko: '노래와 아티스트를 입력하고 바로 돌리세요 – 로그인도, 실제 커버도 필요 없어요.',
+  },
+  'offline.tip': {
+    de: 'Eine Zeile pro Song, z. B. „Marry You – Bruno Mars“. Jeder Song bekommt zufällig eines der vier Cover-Bilder.',
+    en: 'One song per line, e.g. “Marry You – Bruno Mars”. Each song gets one of the four cover images at random.',
+    ko: '한 줄에 한 곡, 예: “Marry You – Bruno Mars”. 각 곡은 네 개의 커버 이미지 중 하나를 무작위로 받습니다.',
+  },
+  'offline.placeholder': {
+    de: 'Marry You – Bruno Mars\nRisk It All – Bruno Mars\nHello – Adele\n…',
+    en: 'Marry You – Bruno Mars\nRisk It All – Bruno Mars\nHello – Adele\n…',
+    ko: 'Marry You – Bruno Mars\nRisk It All – Bruno Mars\nHello – Adele\n…',
+  },
+  'offline.nameLabel': { de: 'Name der Runde', en: 'Round name', ko: '라운드 이름' },
+  'offline.namePlaceholder': { de: 'Karaoke-Party', en: 'Karaoke party', ko: '노래방 파티' },
+  'offline.defaultName': { de: 'Karaoke-Party', en: 'Karaoke party', ko: '노래방 파티' },
+  'offline.start': { de: 'Los spinnen', en: 'Start spinning', ko: '돌리기 시작' },
+
+  'result.search': { de: 'Auf Spotify suchen', en: 'Search on Spotify', ko: 'Spotify에서 검색' },
   'convert.textareaLabel': { de: 'Songliste', en: 'Song list', ko: '노래 목록' },
   'convert.order': { de: 'Reihenfolge pro Zeile', en: 'Order per line', ko: '줄당 순서' },
   'convert.orderTitleFirst': { de: 'Titel – Interpret', en: 'Title – Artist', ko: '제목 – 아티스트' },

@@ -2388,3 +2388,25 @@ code {
 .discover-banner-import:hover {
   border-color: rgba(124, 92, 255, 0.55);
 }
+
+/* Quadranten-Cover (Offline-Modus: ein Viertel eines geteilten Bildes) */
+.cover-quad {
+  background-repeat: no-repeat;
+}
+/* Offline-Banner im Picker */
+.discover-banner-offline {
+  border-color: rgba(244, 63, 142, 0.3);
+  background: linear-gradient(100deg, rgba(244, 63, 142, 0.1), rgba(124, 92, 255, 0.08));
+}
+.discover-banner-offline:hover {
+  border-color: rgba(244, 63, 142, 0.55);
+}
+/* Welcome – Offline-Hinweis unter den Buttons */
+.welcome-offline-hint {
+  margin: 4px 0 0;
+  max-width: 42ch;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+  text-align: center;
+}

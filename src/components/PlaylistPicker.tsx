@@ -13,6 +13,7 @@ interface PlaylistPickerProps {
   onAlbums: () => void
   onConvert: () => void
   onImport: (file: File) => void
+  onOffline: () => void
   onCancel?: () => void
 }
 
@@ -26,6 +27,7 @@ export function PlaylistPicker({
   onAlbums,
   onConvert,
   onImport,
+  onOffline,
   onCancel,
 }: PlaylistPickerProps) {
   const { t } = useI18n()
@@ -100,6 +102,15 @@ export function PlaylistPicker({
           <span className="discover-banner-text">
             <span className="discover-banner-title">{t('picker.import.title')}</span>
             <span className="discover-banner-hint">{t('picker.import.hint')}</span>
+          </span>
+          <span className="discover-banner-arrow">→</span>
+        </button>
+
+        <button className="discover-banner discover-banner-offline" onClick={onOffline}>
+          <span className="discover-banner-emoji">✍️</span>
+          <span className="discover-banner-text">
+            <span className="discover-banner-title">{t('picker.offline.title')}</span>
+            <span className="discover-banner-hint">{t('picker.offline.hint')}</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>
