@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/i18n'
 import { parseList, type ParsedLine } from '../spotify/convert'
+import { KARAOKE_TOP_100, KARAOKE_TOP_100_TEXT } from '../data/karaokeTop100'
 import { DiceIcon } from './icons'
 
 interface OfflineGuestProps {
@@ -35,6 +36,23 @@ export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
       </header>
 
       <div className="conv-input">
+        <div className="conv-import-row">
+          <span className="conv-import-label">
+            {t('offline.top100Intro', { n: KARAOKE_TOP_100.length })}
+          </span>
+          <button
+            className="btn btn-ghost"
+            onClick={() =>
+              setText((prev) =>
+                prev.trim() ? `${prev.trimEnd()}\n${KARAOKE_TOP_100_TEXT}` : KARAOKE_TOP_100_TEXT,
+              )
+            }
+            title={t('offline.top100', { n: KARAOKE_TOP_100.length })}
+          >
+            🎵 {t('offline.top100', { n: KARAOKE_TOP_100.length })}
+          </button>
+        </div>
+
         <p className="conv-tip">{t('offline.tip')}</p>
 
         <textarea
