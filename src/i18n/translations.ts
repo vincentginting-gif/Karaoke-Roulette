@@ -211,6 +211,77 @@ export const translations: Record<string, Entry> = {
   'convert.createFailed': { de: 'Playlist konnte nicht erstellt werden.', en: 'Could not create the playlist.', ko: '플레이리스트를 만들 수 없습니다.' },
   'convert.noUser': { de: 'Spotify-Konto nicht erkannt. Bitte neu verbinden.', en: 'Spotify account not detected. Please reconnect.', ko: 'Spotify 계정을 확인할 수 없습니다. 다시 연결하세요.' },
 
+  // ── Konverter – Erklärungen (Eingabe) ──
+  'convert.help.title': { de: "So funktioniert's", en: 'How it works', ko: '이용 방법' },
+  'convert.help.1': {
+    de: 'In deiner App (Melon, YouTube Music …) die Songs markieren und kopieren.',
+    en: 'In your app (Melon, YouTube Music …) select and copy the songs.',
+    ko: '앱(Melon, YouTube Music 등)에서 노래를 선택해 복사하세요.',
+  },
+  'convert.help.2': {
+    de: 'Hier einfügen – eine Zeile pro Song, z. B. „Dynamite – BTS“.',
+    en: 'Paste them here – one song per line, e.g. “Dynamite – BTS”.',
+    ko: '여기에 붙여넣으세요 – 한 줄에 한 곡, 예: “Dynamite – BTS”.',
+  },
+  'convert.help.3': {
+    de: 'Auf „Auf Spotify suchen“ tippen. Jeder Song wird bei Spotify gesucht und der beste Treffer angezeigt.',
+    en: 'Tap “Search on Spotify”. Each song is looked up on Spotify and the best match is shown.',
+    ko: '“Spotify에서 검색”을 누르세요. 각 곡을 Spotify에서 찾아 가장 잘 맞는 결과를 보여줍니다.',
+  },
+  'convert.help.4': {
+    de: 'Treffer prüfen und „Playlist erstellen“ – fertig ist deine Spotify-Playlist.',
+    en: 'Check the matches and “Create playlist” – your Spotify playlist is ready.',
+    ko: '결과를 확인하고 “플레이리스트 만들기” – Spotify 플레이리스트 완성.',
+  },
+  'convert.permNote': {
+    de: 'Beim ersten Erstellen fragt Spotify nach der Erlaubnis, Playlists anzulegen. Warst du vorher schon verbunden: einmal in den Einstellungen „Spotify trennen“ und neu verbinden.',
+    en: 'The first time, Spotify asks permission to create playlists. If you were already connected: go to settings, tap “Disconnect Spotify” and reconnect once.',
+    ko: '처음 만들 때 Spotify가 플레이리스트 생성 권한을 요청합니다. 이미 연결되어 있었다면 설정에서 “Spotify 연결 해제” 후 다시 연결하세요.',
+  },
+  'convert.orderHint': {
+    de: 'Keine Sorge – die Reihenfolge wird automatisch erkannt. Dieser Schalter hilft nur bei kniffligen Fällen.',
+    en: "Don't worry – the order is detected automatically. This switch only helps in tricky cases.",
+    ko: '걱정 마세요 – 순서는 자동으로 인식됩니다. 이 스위치는 까다로운 경우에만 도움이 됩니다.',
+  },
+
+  // ── Konverter – Legende (Prüfen) ──
+  'convert.legend.title': { de: 'Was bedeuten die Markierungen?', en: 'What do the labels mean?', ko: '표시의 의미는?' },
+  'convert.legend.high': {
+    de: 'Sicher – sehr wahrscheinlich der richtige Song, automatisch ausgewählt.',
+    en: 'Strong – very likely the right song, selected automatically.',
+    ko: '확실 – 거의 확실히 맞는 곡, 자동 선택됨.',
+  },
+  'convert.legend.medium': {
+    de: 'Prüfen – wahrscheinlich richtig, schau kurz drüber. Ist ebenfalls ausgewählt.',
+    en: 'Check – probably right, give it a quick look. Also selected.',
+    ko: '확인 – 아마 맞음, 한번 확인하세요. 역시 선택됨.',
+  },
+  'convert.legend.low': {
+    de: 'Unsicher – schwacher Treffer, standardmäßig NICHT ausgewählt. Bei Bedarf selbst anhaken.',
+    en: 'Weak – poor match, NOT selected by default. Tick it yourself if it fits.',
+    ko: '불확실 – 약한 결과, 기본적으로 선택 안 됨. 맞으면 직접 체크하세요.',
+  },
+  'convert.legend.none': {
+    de: 'Kein Treffer – Spotify hat nichts gefunden (siehe Diagnose, was gesucht wurde).',
+    en: 'No match – Spotify found nothing (see Diagnostics for what was searched).',
+    ko: '없음 – Spotify가 찾지 못함 (검색 내용은 진단 참조).',
+  },
+  'convert.legend.swap': {
+    de: '↔ – Titel und Interpret waren vertauscht und wurden automatisch korrigiert.',
+    en: '↔ – title and artist were swapped and got auto-corrected.',
+    ko: '↔ – 제목과 아티스트가 바뀌어 자동 교정되었습니다.',
+  },
+  'convert.legend.check': {
+    de: 'Häkchen – bestimmt, ob der Song in die neue Playlist kommt.',
+    en: 'Checkbox – decides whether the song goes into the new playlist.',
+    ko: '체크박스 – 곡을 새 플레이리스트에 넣을지 결정합니다.',
+  },
+  'convert.legend.alts': {
+    de: '„Andere Treffer“ – zeigt weitere Kandidaten; tippe einen an, um ihn stattdessen zu nehmen.',
+    en: '“Other matches” – shows more candidates; tap one to use it instead.',
+    ko: '“다른 결과” – 다른 후보를 보여줍니다; 눌러서 대신 선택하세요.',
+  },
+
   // ── Konverter – Diagnose ──
   'convert.debug.show': { de: 'Diagnose', en: 'Diagnostics', ko: '진단' },
   'convert.debug.queries': { de: 'Suchanfragen an Spotify', en: 'Search queries to Spotify', ko: 'Spotify 검색 쿼리' },

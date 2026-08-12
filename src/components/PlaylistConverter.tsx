@@ -123,7 +123,13 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
 
       {phase === 'input' && (
         <div className="conv-input">
-          <p className="conv-tip">{t('convert.tip')}</p>
+          <ol className="conv-help">
+            <li>{t('convert.help.1')}</li>
+            <li>{t('convert.help.2')}</li>
+            <li>{t('convert.help.3')}</li>
+            <li>{t('convert.help.4')}</li>
+          </ol>
+
           <textarea
             className="conv-textarea"
             value={text}
@@ -153,6 +159,7 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
               </button>
             </div>
           </div>
+          <p className="conv-hint">💡 {t('convert.orderHint')}</p>
 
           <div className="conv-row">
             <span className="conv-row-label">{t('convert.nameLabel')}</span>
@@ -165,6 +172,8 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
               aria-label={t('convert.nameLabel')}
             />
           </div>
+
+          <p className="conv-hint conv-hint-perm">ℹ️ {t('convert.permNote')}</p>
 
           <div className="conv-actions">
             <span className="conv-parsed">
@@ -232,6 +241,40 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
               </button>
             </div>
           </div>
+
+          <details className="conv-legend">
+            <summary>{t('convert.legend.title')}</summary>
+            <ul>
+              <li>
+                <span className="conv-badge conv-badge-high">{t('convert.confidence.high')}</span>
+                {t('convert.legend.high')}
+              </li>
+              <li>
+                <span className="conv-badge conv-badge-medium">{t('convert.confidence.medium')}</span>
+                {t('convert.legend.medium')}
+              </li>
+              <li>
+                <span className="conv-badge conv-badge-low">{t('convert.confidence.low')}</span>
+                {t('convert.legend.low')}
+              </li>
+              <li>
+                <span className="conv-badge conv-badge-none">{t('convert.confidence.none')}</span>
+                {t('convert.legend.none')}
+              </li>
+              <li>
+                <span className="conv-legend-mark">↔</span>
+                {t('convert.legend.swap')}
+              </li>
+              <li>
+                <span className="conv-legend-mark">☑</span>
+                {t('convert.legend.check')}
+              </li>
+              <li>
+                <span className="conv-legend-mark">▼</span>
+                {t('convert.legend.alts')}
+              </li>
+            </ul>
+          </details>
 
           <ul className="conv-list">
             {results.map((r, i) => {

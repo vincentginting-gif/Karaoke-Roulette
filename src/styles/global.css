@@ -2249,3 +2249,75 @@ code {
   font-weight: 700;
   cursor: help;
 }
+
+/* Konverter – Anleitung, Hinweise & Legende */
+.conv-help {
+  margin: 0;
+  padding: 14px 16px 14px 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.conv-help li::marker {
+  color: var(--accent);
+  font-weight: 700;
+}
+.conv-hint {
+  margin: -4px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-faint);
+  line-height: 1.5;
+}
+.conv-hint-perm {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+}
+.conv-legend {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 14px;
+}
+.conv-legend summary {
+  cursor: pointer;
+  padding: 12px 2px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  user-select: none;
+}
+.conv-legend summary:hover {
+  color: var(--accent);
+}
+.conv-legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.conv-legend li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+.conv-legend .conv-badge {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+.conv-legend-mark {
+  flex: 0 0 22px;
+  text-align: center;
+  color: var(--accent);
+  font-weight: 700;
+}
