@@ -41,9 +41,9 @@ export const translations: Record<string, Entry> = {
     ko: 'Spotify에 연결하고 플레이리스트를 선택하세요 – 또는 장르·아티스트·앨범으로 찾아보세요.',
   },
   'welcome.step2': {
-    de: 'Auf „Song auswählen“ tippen – das Roulette dreht und bleibt auf einem zufälligen Song stehen.',
-    en: 'Tap “Pick a song” – the roulette spins and lands on a random song.',
-    ko: '“노래 뽑기”를 누르면 룰렛이 돌아 무작위 노래에서 멈춥니다.',
+    de: 'Auf „Spin“ tippen – das Roulette dreht und bleibt auf einem zufälligen Song stehen.',
+    en: 'Tap “Spin” – the roulette spins and lands on a random song.',
+    ko: '“Spin”을 누르면 룰렛이 돌아 무작위 노래에서 멈춥니다.',
   },
   'welcome.step3': {
     de: 'Den Song auf Spotify oder einer anderen Plattform öffnen und lossingen.',
@@ -97,7 +97,7 @@ export const translations: Record<string, Entry> = {
   'config.details': { de: 'Details stehen in der', en: 'Details are in the', ko: '자세한 내용은 다음 참고:' },
 
   // ── Startseite ──
-  'home.spin': { de: 'Song auswählen', en: 'Pick a song', ko: '노래 뽑기' },
+  'home.spin': { de: 'Spin', en: 'Spin', ko: 'Spin' },
   'home.changePlaylist': { de: 'Playlist wechseln', en: 'Change playlist', ko: '플레이리스트 변경' },
   'home.manageSongs': { de: 'Songs verwalten', en: 'Manage songs', ko: '노래 관리' },
   'home.playlist': { de: 'Playlist', en: 'Playlist', ko: '플레이리스트' },
