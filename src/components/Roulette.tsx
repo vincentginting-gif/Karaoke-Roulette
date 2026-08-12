@@ -163,6 +163,13 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
               </article>
             ) : (
               <article className="song-card" key={i}>
+                {track.coverUrl && (
+                  <div
+                    className="song-card-glow"
+                    style={{ backgroundImage: `url(${track.coverUrl})` }}
+                    aria-hidden="true"
+                  />
+                )}
                 <AlbumCover url={track.coverUrl} alt={track.title} className="song-card-cover" />
                 <div className="song-card-info">
                   <span className="song-card-title">{track.title}</span>

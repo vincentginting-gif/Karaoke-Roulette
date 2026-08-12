@@ -5,10 +5,10 @@
 
 export type Lang = 'de' | 'en' | 'ko'
 
-export const LANGS: { code: Lang; label: string; flag: string }[] = [
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
+export const LANGS: { code: Lang; label: string; abbr: string; flag: string }[] = [
+  { code: 'de', label: 'Deutsch', abbr: 'De', flag: '🇩🇪' },
+  { code: 'en', label: 'English', abbr: 'En', flag: '🇬🇧' },
+  { code: 'ko', label: '한국어', abbr: 'Ko', flag: '🇰🇷' },
 ]
 
 type Entry = Record<Lang, string>
@@ -27,6 +27,30 @@ export const translations: Record<string, Entry> = {
   'common.add': { de: 'Hinzufügen', en: 'Add', ko: '추가' },
   'common.song': { de: 'Song', en: 'song', ko: '곡' },
   'common.songs': { de: 'Songs', en: 'songs', ko: '곡' },
+
+  // ── Homepage / Welcome ──
+  'welcome.intro': {
+    de: 'Karaoke Roulette wählt per spannender Case-Opening-Animation zufällig einen Song aus deiner Spotify-Playlist – perfekt, um zu entscheiden, wer als Nächstes was singt.',
+    en: 'Karaoke Roulette picks a random song from your Spotify playlist with an exciting case-opening animation – perfect for deciding who sings what next.',
+    ko: 'Karaoke Roulette는 케이스 오프닝 스타일 애니메이션으로 Spotify 플레이리스트에서 노래를 무작위로 뽑아줍니다 – 다음에 누가 무엇을 부를지 정하기에 딱 좋아요.',
+  },
+  'welcome.how': { de: "So funktioniert's", en: 'How it works', ko: '이용 방법' },
+  'welcome.step1': {
+    de: 'Mit Spotify verbinden und eine Playlist wählen – oder nach Genre, Artist oder Album entdecken.',
+    en: 'Connect Spotify and pick a playlist – or discover by genre, artist or album.',
+    ko: 'Spotify에 연결하고 플레이리스트를 선택하세요 – 또는 장르·아티스트·앨범으로 찾아보세요.',
+  },
+  'welcome.step2': {
+    de: 'Auf „Song auswählen“ tippen – das Roulette dreht und bleibt auf einem zufälligen Song stehen.',
+    en: 'Tap “Pick a song” – the roulette spins and lands on a random song.',
+    ko: '“노래 뽑기”를 누르면 룰렛이 돌아 무작위 노래에서 멈춥니다.',
+  },
+  'welcome.step3': {
+    de: 'Den Song auf Spotify oder einer anderen Plattform öffnen und lossingen.',
+    en: 'Open the song on Spotify or another platform and start singing.',
+    ko: 'Spotify나 다른 플랫폼에서 노래를 열고 노래를 시작하세요.',
+  },
+  'welcome.start': { de: 'Playlist wählen', en: 'Choose playlist', ko: '플레이리스트 선택' },
 
   // ── Verbinden ──
   'connect.heading': { de: 'Verbinde Spotify', en: 'Connect Spotify', ko: 'Spotify 연결' },
@@ -194,8 +218,13 @@ export const translations: Record<string, Entry> = {
   // ── Ergebnis ──
   'result.kicker': { de: 'Dein Song 🎤', en: 'Your song 🎤', ko: '당신의 노래 🎤' },
   'result.open': { de: 'Auf Spotify öffnen', en: 'Open in Spotify', ko: 'Spotify에서 열기' },
-  'result.again': { de: 'Noch einen Song', en: 'One more song', ko: '한 곡 더' },
+  'result.again': { de: 'Spin', en: 'Spin', ko: 'Spin' },
   'result.switch': { de: 'Playlist wechseln', en: 'Change playlist', ko: '플레이리스트 변경' },
+  'result.openElsewhere': {
+    de: 'Auf anderer Plattform öffnen',
+    en: 'Open on another platform',
+    ko: '다른 플랫폼에서 열기',
+  },
 
   // ── Roulette ──
   'roulette.surprise': { de: 'Große Überraschung …', en: 'Big surprise …', ko: '깜짝 등장 …' },

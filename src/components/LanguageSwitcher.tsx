@@ -16,6 +16,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
           title={l.label}
         >
           <span className="lang-flag">{l.flag}</span>
+          <span className="lang-abbr">{l.abbr}</span>
           <span className="lang-label">{l.label}</span>
         </button>
       ))}

@@ -33,7 +33,7 @@ import { buildStrip, pickWinner, WINNER_INDEX } from './roulette/engine'
 import { unlockAudio } from './roulette/audio'
 
 import { ConfigNeeded } from './components/ConfigNeeded'
-import { ConnectSpotify } from './components/ConnectSpotify'
+import { Welcome } from './components/Welcome'
 import { PlaylistPicker } from './components/PlaylistPicker'
 import { Home } from './components/Home'
 import { Roulette } from './components/Roulette'
@@ -388,10 +388,6 @@ export function App() {
     setView('result')
   }, [winner])
 
-  const openSpotify = useCallback(() => {
-    if (winner) window.open(winner.spotifyUrl, '_blank', 'noopener,noreferrer')
-  }, [winner])
-
   const toggleSound = useCallback(() => {
     setSoundEnabled((prev) => {
       const next = !prev
@@ -419,7 +415,7 @@ export function App() {
   if (auth.status === 'checking') {
     content = <Spinner label={t('app.checking')} />
   } else if (auth.status === 'disconnected') {
-    content = <ConnectSpotify onConnect={auth.connect} />
+    content = <Welcome connected={false} onConnect={auth.connect} onStart={() => {}} />
   } else if (view === 'discover') {
     content = (
       <DiscoverPicker
@@ -459,7 +455,7 @@ export function App() {
         onCancel={() => setView('picker')}
       />
     )
-  } else if (view === 'picker' || !activePlaylist) {
+  } else if (view === 'picker') {
     content = (
       <PlaylistPicker
         playlists={playlists}
@@ -471,7 +467,7 @@ export function App() {
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )
-  } else if (view === 'manage') {
+  } else if (view === 'manage' && activePlaylist) {
     content = (
       <SongManager
         playlist={activePlaylist}
@@ -480,6 +476,11 @@ export function App() {
         onToggleExclude={toggleExclude}
         onBack={() => setView('home')}
       />
+    )
+  } else if (!activePlaylist) {
+    // Homepage nach Verbindung, bevor eine Playlist gewählt ist.
+    content = (
+      <Welcome connected onConnect={() => {}} onStart={() => setView('picker')} />
     )
   } else if (view === 'roulette' && winner) {
     content = (
@@ -493,12 +494,7 @@ export function App() {
     )
   } else if (view === 'result' && winner) {
     content = (
-      <Result
-        track={winner}
-        onAgain={spin}
-        onOpenSpotify={openSpotify}
-        onChangePlaylist={openPicker}
-      />
+      <Result track={winner} onAgain={spin} onChangePlaylist={openPicker} />
     )
   } else {
     // view === 'home'
