@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import type { Track } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
+import { fetchPlatformLinks, songlinkPageUrl, type PlatformLink } from '../spotify/odesli'
 import { AlbumCover } from './AlbumCover'
 import { DiceIcon, ExternalIcon } from './icons'
 
@@ -13,6 +15,25 @@ interface ResultProps {
 /** Ergebnisbereich – prominente Präsentation des Gewinner-Songs. */
 export function Result({ track, onAgain, onOpenSpotify, onChangePlaylist }: ResultProps) {
   const { t } = useI18n()
+  const [links, setLinks] = useState<PlatformLink[]>([])
+
+  // Best-Effort: direkte Links zu anderen Plattformen laden. Bei Fehler
+  // (CORS/Netzwerk) bleibt es beim universellen „song.link"-Button.
+  useEffect(() => {
+    let cancelled = false
+    setLinks([])
+    fetchPlatformLinks(track.spotifyUrl)
+      .then((l) => {
+        if (!cancelled) setLinks(l)
+      })
+      .catch(() => {
+        /* still: universeller Button reicht */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [track.spotifyUrl])
+
   return (
     <section className="stage stage-center result result-in">
       <p className="result-kicker">{t('result.kicker')}</p>
@@ -33,6 +54,32 @@ export function Result({ track, onAgain, onOpenSpotify, onChangePlaylist }: Resu
           <DiceIcon className="btn-icon" />
           {t('result.again')}
         </button>
+      </div>
+
+      <div className="result-cross">
+        <a
+          className="result-cross-main"
+          href={songlinkPageUrl(track.id)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          🌐 {t('result.openElsewhere')}
+        </a>
+        {links.length > 0 && (
+          <div className="result-cross-chips">
+            {links.map((l) => (
+              <a
+                key={l.key}
+                className="result-cross-chip"
+                href={l.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {l.label}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       <button className="btn btn-ghost result-switch" onClick={onChangePlaylist}>

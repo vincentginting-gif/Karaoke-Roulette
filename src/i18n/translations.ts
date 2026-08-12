@@ -232,6 +232,11 @@ export const translations: Record<string, Entry> = {
   'result.open': { de: 'Auf Spotify öffnen', en: 'Open in Spotify', ko: 'Spotify에서 열기' },
   'result.again': { de: 'Noch einen Song', en: 'One more song', ko: '한 곡 더' },
   'result.switch': { de: 'Playlist wechseln', en: 'Change playlist', ko: '플레이리스트 변경' },
+  'result.openElsewhere': {
+    de: 'Auf anderer Plattform öffnen',
+    en: 'Open on another platform',
+    ko: '다른 플랫폼에서 열기',
+  },
 
   // ── Roulette ──
   'roulette.surprise': { de: 'Große Überraschung …', en: 'Big surprise …', ko: '깜짝 등장 …' },
