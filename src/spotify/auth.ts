@@ -10,8 +10,13 @@ import type { AuthTokens } from './types'
 const AUTH_ENDPOINT = 'https://accounts.spotify.com/authorize'
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token'
 
-// Scopes: nur Lesezugriff auf die Playlists des Nutzers.
-const SCOPES = ['playlist-read-private', 'playlist-read-collaborative']
+// Scopes: Playlists lesen + (für den Konverter) neue Playlists anlegen/füllen.
+const SCOPES = [
+  'playlist-read-private',
+  'playlist-read-collaborative',
+  'playlist-modify-public',
+  'playlist-modify-private',
+]
 
 const STORAGE_KEYS = {
   tokens: 'kr.auth.tokens',

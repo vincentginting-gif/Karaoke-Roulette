@@ -10,6 +10,7 @@ interface PlaylistPickerProps {
   onDiscover: () => void
   onArtists: () => void
   onAlbums: () => void
+  onConvert: () => void
   onCancel?: () => void
 }
 
@@ -21,6 +22,7 @@ export function PlaylistPicker({
   onDiscover,
   onArtists,
   onAlbums,
+  onConvert,
   onCancel,
 }: PlaylistPickerProps) {
   const { t } = useI18n()
@@ -62,6 +64,15 @@ export function PlaylistPicker({
           <span className="discover-banner-text">
             <span className="discover-banner-title">{t('picker.album.title')}</span>
             <span className="discover-banner-hint">{t('picker.album.hint')}</span>
+          </span>
+          <span className="discover-banner-arrow">→</span>
+        </button>
+
+        <button className="discover-banner discover-banner-convert" onClick={onConvert}>
+          <span className="discover-banner-emoji">🔄</span>
+          <span className="discover-banner-text">
+            <span className="discover-banner-title">{t('picker.convert.title')}</span>
+            <span className="discover-banner-hint">{t('picker.convert.hint')}</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>

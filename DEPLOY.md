@@ -108,6 +108,28 @@ Login. Änderst du die Playlist, exportierst du einmal neu und pushst wieder.
 
 ---
 
+## 🔄 Playlist-Konverter – von Melon / YouTube Music nach Spotify
+
+Unter **Playlists → „Playlist konvertieren"** kannst du eine Songliste aus
+einer anderen App nach Spotify übertragen:
+
+1. In der Quell-App (Melon, YouTube Music …) die Titel kopieren – **eine Zeile
+   pro Song**, z. B. `Dynamite – BTS`. Titel/Interpret dürfen mit `-`, `–` oder
+   Tab getrennt sein; die Reihenfolge (Titel–Interpret / Interpret–Titel) lässt
+   sich umschalten.
+2. Liste einfügen, Namen der neuen Playlist wählen, **„Auf Spotify suchen"**.
+3. Die App zeigt zu jedem Song den besten Spotify-Treffer mit **Konfidenz**
+   (Sicher / Prüfen / Unsicher). Unsichere abwählen oder einen anderen Treffer
+   auswählen.
+4. **„Playlist erstellen"** legt die Playlist in deinem Spotify-Konto an – du
+   kannst sie danach direkt in Karaoke Roulette verwenden.
+
+> Beim ersten Mal fragt Spotify nach der Berechtigung, Playlists anzulegen.
+> Falls du schon verbunden warst: einmal **„Spotify trennen"** und neu
+> verbinden, damit die neue Berechtigung greift.
+
+---
+
 ## Häufige Stolpersteine
 
 - **„INVALID_CLIENT: Invalid redirect URI“** → Die Vercel-URL ist bei Spotify

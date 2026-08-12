@@ -77,6 +77,60 @@ async function apiFetch<T>(path: string): Promise<T> {
   throw new ApiError(`Spotify-Anfrage fehlgeschlagen (Status ${res.status}).`, false, res.status)
 }
 
+/**
+ * Fetch-Wrapper für schreibende Aufrufe (POST/PUT) mit JSON-Body.
+ * Gleiches Error-Handling wie apiFetch; 403 signalisiert oft fehlende Scopes.
+ */
+async function apiSend<T>(path: string, method: 'POST' | 'PUT', body: unknown): Promise<T> {
+  let token: string
+  try {
+    token = await getValidAccessToken()
+  } catch {
+    throw new ApiError('Nicht mit Spotify verbunden.', true)
+  }
+
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    throw new ApiError('Netzwerkfehler bei der Verbindung zu Spotify.')
+  }
+
+  if (res.ok) {
+    // 201/200 mit JSON-Antwort; manche Endpunkte liefern leeren Body.
+    const text = await res.text().catch(() => '')
+    return (text ? JSON.parse(text) : {}) as T
+  }
+
+  const bodyText = await res.text().catch(() => '')
+  console.warn('[Spotify API] Schreibfehler', res.status, path, bodyText.slice(0, 300))
+
+  if (res.status === 401) {
+    clearTokens()
+    throw new ApiError('Sitzung abgelaufen. Bitte erneut mit Spotify verbinden.', true, 401)
+  }
+  if (res.status === 403) {
+    throw new ApiError(
+      'Spotify hat den Schreibzugriff verweigert (403). Vermutlich fehlt die ' +
+        'Playlist-Berechtigung – bitte einmal „Spotify trennen“ und neu verbinden, ' +
+        'um Karaoke Roulette das Anlegen von Playlists zu erlauben.',
+      false,
+      403,
+    )
+  }
+  if (res.status === 429) {
+    throw new ApiError('Zu viele Anfragen an Spotify. Bitte kurz warten.', false, 429)
+  }
+  throw new ApiError(`Spotify-Schreibanfrage fehlgeschlagen (Status ${res.status}).`, false, res.status)
+}
+
 /** Liefert die Spotify-User-ID des angemeldeten Nutzers (für Besitz-Erkennung). */
 export async function fetchCurrentUserId(): Promise<string | null> {
   try {
@@ -447,6 +501,68 @@ export async function searchTracksByAlbum(
     )
   }
   return tracks
+}
+
+// ── Konverter: Kandidaten-Suche & Playlist schreiben ─────────
+
+/**
+ * Sucht bis zu 10 Kandidaten-Tracks im Spotify-Katalog für eine freie Query.
+ * Wird vom Playlist-Konverter genutzt, um Fremd-Playlists (Melon, YT Music …)
+ * gegen Spotify abzugleichen. Fehlertolerant: liefert bei Problemen [].
+ */
+export async function searchCandidates(query: string): Promise<Track[]> {
+  try {
+    const page = await searchTrackPage(query, 0)
+    const out: Track[] = []
+    for (const t of page.tracks?.items ?? []) {
+      if (isUsableTrack(t)) out.push(mapTrack(t))
+    }
+    return out
+  } catch {
+    return []
+  }
+}
+
+/** Ergebnis einer neu erstellten Playlist. */
+export interface CreatedPlaylist {
+  id: string
+  name: string
+  url: string
+}
+
+/** Legt eine neue (private) Playlist für den Nutzer an. */
+export async function createPlaylist(
+  userId: string,
+  name: string,
+  description = '',
+  isPublic = false,
+): Promise<CreatedPlaylist> {
+  const raw = await apiSend<{
+    id: string
+    name: string
+    external_urls?: { spotify?: string }
+  }>(`/users/${encodeURIComponent(userId)}/playlists`, 'POST', {
+    name,
+    description,
+    public: isPublic,
+  })
+  return {
+    id: raw.id,
+    name: raw.name || name,
+    url: raw.external_urls?.spotify ?? `https://open.spotify.com/playlist/${raw.id}`,
+  }
+}
+
+/**
+ * Fügt Tracks (per Spotify-Track-ID) zu einer Playlist hinzu.
+ * Spotify erlaubt max. 100 URIs pro Anfrage -> Batches.
+ */
+export async function addTracksToPlaylist(playlistId: string, trackIds: string[]): Promise<void> {
+  const uris = trackIds.map((id) => `spotify:track:${id}`)
+  for (let i = 0; i < uris.length; i += 100) {
+    const batch = uris.slice(i, i + 100)
+    await apiSend(`/playlists/${playlistId}/tracks`, 'POST', { uris: batch })
+  }
 }
 
 /** Wandelt einen Fehler beim Track-Laden in eine klare, handlungsleitende Meldung. */

@@ -9,6 +9,7 @@ import {
   searchTracksByAlbum,
   searchTracksByArtist,
   searchTracksByGenre,
+  type CreatedPlaylist,
 } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
 import type { Genre } from './spotify/genres'
@@ -45,11 +46,21 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
+import { PlaylistConverter } from './components/PlaylistConverter'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
 import { useI18n } from './i18n/i18n'
 
-type View = 'home' | 'picker' | 'discover' | 'artist' | 'album' | 'roulette' | 'result' | 'manage'
+type View =
+  | 'home'
+  | 'picker'
+  | 'discover'
+  | 'artist'
+  | 'album'
+  | 'convert'
+  | 'roulette'
+  | 'result'
+  | 'manage'
 
 const DISCOVER_PREFIX = 'discover:'
 const ARTIST_PREFIX = 'artist:'
@@ -361,6 +372,27 @@ export function App() {
     setView('home')
   }, [])
 
+  // ── Konverter: neu erstellte Playlist direkt als Quelle nutzen ──
+  const useConvertedPlaylist = useCallback((created: CreatedPlaylist, trackCount: number) => {
+    const pl: Playlist = {
+      id: created.id,
+      name: created.name,
+      imageUrl: null,
+      trackCount,
+      ownerName: '',
+      ownerId: currentUserId ?? '',
+      isOwn: true,
+    }
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    // Frisch geladene Playlist-Liste erzwingen (die neue erscheint im Picker).
+    setPlaylists([])
+    setView('home')
+  }, [currentUserId])
+
   // ── Gast-Modus starten / beenden ──
   const selectGuest = useCallback(async () => {
     const g = await loadGuestPlaylist()
@@ -532,6 +564,15 @@ export function App() {
         onCancel={() => setView('picker')}
       />
     )
+  } else if (view === 'convert') {
+    content = (
+      <PlaylistConverter
+        userId={currentUserId}
+        onError={showError}
+        onCancel={() => setView('picker')}
+        onUsePlaylist={useConvertedPlaylist}
+      />
+    )
   } else if (view === 'picker') {
     content = (
       <PlaylistPicker
@@ -541,6 +582,7 @@ export function App() {
         onDiscover={() => setView('discover')}
         onArtists={() => setView('artist')}
         onAlbums={() => setView('album')}
+        onConvert={() => setView('convert')}
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )
