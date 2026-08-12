@@ -86,12 +86,61 @@ function parseLine(rawLine: string, artistFirst: boolean): ParsedLine | null {
   return { raw, title: title.trim(), artist: artist.trim() }
 }
 
-/** Parst den gesamten eingefügten Text in Einträge (leere Zeilen ignoriert). */
+/** true, wenn der String einen Titel/Interpret-Trenner enthält. */
+function hasSeparator(s: string): boolean {
+  return SEPARATORS.some((sep) => s.includes(sep))
+}
+
+/**
+ * Zerlegt eine Zeile ggf. an Kommas in mehrere Songs – aber nur, wenn ALLE
+ * Teile einen Trenner enthalten (also aussehen wie „X – Y“). So werden
+ * „A – B, C – D“ zu zwei Songs, während Titel mit Komma (z. B. „Thank U,
+ * Next“) unangetastet bleiben.
+ */
+function expandEntries(line: string): string[] {
+  if (!line.includes(',')) return [line]
+  const parts = line.split(',').map((p) => p.trim()).filter(Boolean)
+  if (parts.length >= 2 && parts.every(hasSeparator)) return parts
+  return [line]
+}
+
+/**
+ * Parst den gesamten eingefügten Text in Einträge. Trennt an Zeilenumbrüchen
+ * UND (bei „X – Y, X – Y“-Mustern) an Kommas. Leere Zeilen werden ignoriert.
+ */
 export function parseList(text: string, artistFirst: boolean): ParsedLine[] {
   return text
     .split(/\r?\n/)
+    .flatMap(expandEntries)
     .map((l) => parseLine(l, artistFirst))
     .filter((l): l is ParsedLine => l !== null && l.title.length > 0)
+}
+
+// ── Import einer gespeicherten Datei (guest-playlist.json) ────
+
+/** Eine importierte Playlist (gleiches Format wie der Export). */
+export interface ImportedPlaylist {
+  name: string
+  tracks: Track[]
+}
+
+/**
+ * Liest eine gespeicherte JSON-Datei ({ name, tracks: Track[] }) ein.
+ * Gibt null zurück, wenn das Format ungültig ist oder keine Songs enthält.
+ */
+export function parseImportedJson(text: string): ImportedPlaylist | null {
+  try {
+    const data = JSON.parse(text) as { name?: unknown; tracks?: unknown }
+    if (!data || !Array.isArray(data.tracks)) return null
+    const tracks = (data.tracks as Track[]).filter(
+      (t) => t && typeof t.id === 'string' && typeof t.title === 'string',
+    )
+    if (tracks.length === 0) return null
+    const name = typeof data.name === 'string' && data.name.trim() ? data.name.trim() : 'Importierte Songs'
+    return { name, tracks }
+  } catch {
+    return null
+  }
 }
 
 // ── Ähnlichkeit (Sørensen-Dice auf Bigrammen) ────────────────

@@ -12,6 +12,7 @@ import {
   type CreatedPlaylist,
 } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
+import { parseImportedJson } from './spotify/convert'
 import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
@@ -416,6 +417,23 @@ export function App() {
     setView('home')
   }, [])
 
+  // ── Gespeicherte JSON-Datei importieren (aus dem Picker) ──
+  const importSongsFile = useCallback(
+    async (file: File) => {
+      try {
+        const parsed = parseImportedJson(await file.text())
+        if (!parsed) {
+          showError(t('convert.importFailed'))
+          return
+        }
+        useConvertedTracks(parsed.name, parsed.tracks)
+      } catch {
+        showError(t('convert.importFailed'))
+      }
+    },
+    [useConvertedTracks, showError, t],
+  )
+
   // ── Konverter: neu erstellte Playlist direkt als Quelle nutzen ──
   const useConvertedPlaylist = useCallback((created: CreatedPlaylist, trackCount: number) => {
     const pl: Playlist = {
@@ -628,6 +646,7 @@ export function App() {
         onArtists={() => setView('artist')}
         onAlbums={() => setView('album')}
         onConvert={() => setView('convert')}
+        onImport={importSongsFile}
         onCancel={activePlaylist ? () => setView('home') : undefined}
       />
     )

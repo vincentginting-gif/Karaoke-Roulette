@@ -148,6 +148,12 @@ export const translations: Record<string, Entry> = {
     en: 'Song list from Melon, YouTube Music & co. → Spotify',
     ko: 'Melon·YouTube Music 등의 목록 → Spotify',
   },
+  'picker.import.title': { de: 'Datei importieren', en: 'Import file', ko: '파일 가져오기' },
+  'picker.import.hint': {
+    de: 'Gespeicherte Songliste (JSON) laden und direkt rollen',
+    en: 'Load a saved song list (JSON) and roll right away',
+    ko: '저장된 노래 목록(JSON)을 불러와 바로 돌리기',
+  },
 
   // ── Playlist-Konverter ──
   'convert.title': { de: 'Playlist konvertieren', en: 'Convert playlist', ko: '플레이리스트 변환' },
@@ -162,9 +168,25 @@ export const translations: Record<string, Entry> = {
     ko: '노래를 붙여넣으세요 – 한 줄에 한 곡, 예: “Dynamite – BTS”. 제목과 아티스트는 “-”, “–” 또는 탭으로 구분할 수 있어요.',
   },
   'convert.placeholder': {
-    de: 'Dynamite – BTS\nBlinding Lights – The Weeknd\nround and round – 소녀시대\n…',
-    en: 'Dynamite – BTS\nBlinding Lights – The Weeknd\nround and round – Girls’ Generation\n…',
-    ko: 'Dynamite – BTS\nBlinding Lights – The Weeknd\nround and round – 소녀시대\n…',
+    de: 'Dynamite – BTS\nBlinding Lights – The Weeknd\nBruno Mars – Marry You, Adele – Hello\n…',
+    en: 'Dynamite – BTS\nBlinding Lights – The Weeknd\nBruno Mars – Marry You, Adele – Hello\n…',
+    ko: 'Dynamite – BTS\nBlinding Lights – The Weeknd\nBruno Mars – Marry You, Adele – Hello\n…',
+  },
+  'convert.commaHint': {
+    de: 'Mehrere Songs in einer Zeile gehen auch – mit Komma getrennt, z. B. „Bruno Mars – Marry You, Adele – Hello“.',
+    en: 'Several songs on one line work too – separated by commas, e.g. “Bruno Mars – Marry You, Adele – Hello”.',
+    ko: '한 줄에 여러 곡도 됩니다 – 쉼표로 구분, 예: “Bruno Mars – Marry You, Adele – Hello”.',
+  },
+  'convert.import': { de: 'Aus Datei importieren', en: 'Import from file', ko: '파일에서 가져오기' },
+  'convert.importIntro': {
+    de: 'Schon mal konvertiert und als Datei gespeichert?',
+    en: 'Converted and saved as a file before?',
+    ko: '전에 변환해서 파일로 저장했나요?',
+  },
+  'convert.importFailed': {
+    de: 'Die Datei konnte nicht gelesen werden. Erwartet wird eine gespeicherte „guest-playlist.json“.',
+    en: 'Could not read the file. A saved “guest-playlist.json” is expected.',
+    ko: '파일을 읽을 수 없습니다. 저장된 “guest-playlist.json”이 필요합니다.',
   },
   'convert.textareaLabel': { de: 'Songliste', en: 'Song list', ko: '노래 목록' },
   'convert.order': { de: 'Reihenfolge pro Zeile', en: 'Order per line', ko: '줄당 순서' },

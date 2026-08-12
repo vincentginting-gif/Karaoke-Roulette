@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
 import {
@@ -8,7 +8,7 @@ import {
   fetchCurrentUserId,
   type CreatedPlaylist,
 } from '../spotify/api'
-import { matchAll, parseList, type MatchResult } from '../spotify/convert'
+import { matchAll, parseImportedJson, parseList, type MatchResult } from '../spotify/convert'
 import type { Track } from '../spotify/types'
 
 interface PlaylistConverterProps {
@@ -43,6 +43,24 @@ export function PlaylistConverter({
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [created, setCreated] = useState<{ pl: CreatedPlaylist; count: number } | null>(null)
   const [showDebug, setShowDebug] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  // ── Gespeicherte Datei importieren (guest-playlist.json) ──
+  const importFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = '' // erlaubt erneutes Wählen derselben Datei
+    if (!file) return
+    try {
+      const parsed = parseImportedJson(await file.text())
+      if (!parsed) {
+        onError(t('convert.importFailed'))
+        return
+      }
+      onUseTracks(parsed.name, parsed.tracks)
+    } catch {
+      onError(t('convert.importFailed'))
+    }
+  }
 
   // Live-Vorschau: wie viele Zeilen werden erkannt?
   const parsed = useMemo(() => parseList(text, artistFirst), [text, artistFirst])
@@ -165,12 +183,27 @@ export function PlaylistConverter({
 
       {phase === 'input' && (
         <div className="conv-input">
+          <div className="conv-import-row">
+            <span className="conv-import-label">{t('convert.importIntro')}</span>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              onChange={importFile}
+              style={{ display: 'none' }}
+            />
+            <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
+              📂 {t('convert.import')}
+            </button>
+          </div>
+
           <ol className="conv-help">
             <li>{t('convert.help.1')}</li>
             <li>{t('convert.help.2')}</li>
             <li>{t('convert.help.3')}</li>
             <li>{t('convert.help.4')}</li>
           </ol>
+          <p className="conv-hint">{t('convert.commaHint')}</p>
 
           <textarea
             className="conv-textarea"

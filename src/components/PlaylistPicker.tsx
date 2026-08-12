@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import type { Playlist } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
@@ -11,6 +12,7 @@ interface PlaylistPickerProps {
   onArtists: () => void
   onAlbums: () => void
   onConvert: () => void
+  onImport: (file: File) => void
   onCancel?: () => void
 }
 
@@ -23,9 +25,18 @@ export function PlaylistPicker({
   onArtists,
   onAlbums,
   onConvert,
+  onImport,
   onCancel,
 }: PlaylistPickerProps) {
   const { t } = useI18n()
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (file) onImport(file)
+  }
+
   return (
     <section className="stage fade-in">
       <header className="picker-header">
@@ -73,6 +84,22 @@ export function PlaylistPicker({
           <span className="discover-banner-text">
             <span className="discover-banner-title">{t('picker.convert.title')}</span>
             <span className="discover-banner-hint">{t('picker.convert.hint')}</span>
+          </span>
+          <span className="discover-banner-arrow">→</span>
+        </button>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={handleFile}
+          style={{ display: 'none' }}
+        />
+        <button className="discover-banner discover-banner-import" onClick={() => fileRef.current?.click()}>
+          <span className="discover-banner-emoji">📂</span>
+          <span className="discover-banner-text">
+            <span className="discover-banner-title">{t('picker.import.title')}</span>
+            <span className="discover-banner-hint">{t('picker.import.hint')}</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>
