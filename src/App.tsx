@@ -65,6 +65,8 @@ type View =
 const DISCOVER_PREFIX = 'discover:'
 const ARTIST_PREFIX = 'artist:'
 const ALBUM_PREFIX = 'album:'
+const CONVERT_PREFIX = 'convert:'
+const CONVERT_TRACKS_KEY = 'kr.convert.tracks'
 
 const ARTIST_SUGGESTIONS = [
   'Taylor Swift',
@@ -111,6 +113,19 @@ function makeArtistPlaylist(names: string[]): Playlist {
   }
 }
 
+/** Baut eine synthetische "Playlist" für konvertierte Songs (aus dem Konverter). */
+function makeConvertPlaylist(name: string, count: number): Playlist {
+  return {
+    id: `${CONVERT_PREFIX}${name}`,
+    name,
+    imageUrl: null,
+    trackCount: count,
+    ownerName: 'Konvertiert',
+    ownerId: '',
+    isOwn: true,
+  }
+}
+
 /** Baut die synthetische "Playlist" für den Gast-Modus. */
 function makeGuestPlaylist(name: string): Playlist {
   return {
@@ -150,6 +165,9 @@ export function App() {
   // Gast-Modus (rollen ohne Spotify-Login)
   const [isGuest, setIsGuest] = useState(false)
   const [guestName, setGuestName] = useState<string | null>(null)
+
+  // Konvertierte Songs (aus dem Konverter, direkt im Roulette nutzbar)
+  const [convertedTracks, setConvertedTracks] = useState<Track[]>([])
 
   // Playlists (nur bei Bedarf geladen)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -283,6 +301,15 @@ export function App() {
       const query = pl.id.slice(DISCOVER_PREFIX.length)
       return searchTracksByGenre(query, 0)
     }
+    if (pl.id.startsWith(CONVERT_PREFIX)) {
+      // Konvertierte Songs: aus dem State oder (nach Reload) aus localStorage.
+      if (convertedTracks.length > 0) return Promise.resolve(convertedTracks)
+      try {
+        return Promise.resolve(JSON.parse(localStorage.getItem(CONVERT_TRACKS_KEY) || '[]') as Track[])
+      } catch {
+        return Promise.resolve([])
+      }
+    }
     return fetchPlaylistTracks(pl)
   }
 
@@ -367,6 +394,23 @@ export function App() {
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
     setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    setView('home')
+  }, [])
+
+  // ── Konverter: gefundene Songs DIREKT im Roulette nutzen (kein Schreibzugriff nötig) ──
+  const useConvertedTracks = useCallback((name: string, trks: Track[]) => {
+    setConvertedTracks(trks)
+    try {
+      localStorage.setItem(CONVERT_TRACKS_KEY, JSON.stringify(trks))
+    } catch {
+      /* Speicher voll o. ä. – nicht kritisch, In-Memory reicht für die Sitzung. */
+    }
+    const pl = makeConvertPlaylist(name || 'Konvertierte Songs', trks.length)
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setDrawnIds(new Set())
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
     setView('home')
@@ -571,6 +615,7 @@ export function App() {
         onError={showError}
         onCancel={() => setView('picker')}
         onUsePlaylist={useConvertedPlaylist}
+        onUseTracks={useConvertedTracks}
       />
     )
   } else if (view === 'picker') {

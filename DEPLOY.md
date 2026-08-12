@@ -115,18 +115,24 @@ einer anderen App nach Spotify übertragen:
 
 1. In der Quell-App (Melon, YouTube Music …) die Titel kopieren – **eine Zeile
    pro Song**, z. B. `Dynamite – BTS`. Titel/Interpret dürfen mit `-`, `–` oder
-   Tab getrennt sein; die Reihenfolge (Titel–Interpret / Interpret–Titel) lässt
-   sich umschalten.
-2. Liste einfügen, Namen der neuen Playlist wählen, **„Auf Spotify suchen"**.
+   Tab getrennt sein; die Reihenfolge wird automatisch erkannt.
+2. Liste einfügen, Namen wählen, **„Auf Spotify suchen"**.
 3. Die App zeigt zu jedem Song den besten Spotify-Treffer mit **Konfidenz**
    (Sicher / Prüfen / Unsicher). Unsichere abwählen oder einen anderen Treffer
    auswählen.
-4. **„Playlist erstellen"** legt die Playlist in deinem Spotify-Konto an – du
-   kannst sie danach direkt in Karaoke Roulette verwenden.
+4. **„Direkt hier rollen"** nutzt die gefundenen Songs sofort im Roulette –
+   oder **„Als Datei speichern"** exportiert sie als `guest-playlist.json`
+   (für den Gast-Modus / als Backup).
 
-> Beim ersten Mal fragt Spotify nach der Berechtigung, Playlists anzulegen.
-> Falls du schon verbunden warst: einmal **„Spotify trennen"** und neu
-> verbinden, damit die neue Berechtigung greift.
+> ⚠️ **Wichtig – keine echte Spotify-Playlist möglich:** Spotify hat Ende 2024
+> den **Schreibzugriff für Apps im „Development Mode" entfernt**. „Playlists
+> anlegen" und „Tracks hinzufügen" liefern daher **403 – unabhängig von den
+> Berechtigungen** (Scopes). Der nötige **„Extended Quota Mode"** wird seit
+> Mai 2025 **nur noch an Firmen** vergeben (registriertes Unternehmen,
+> 250 000+ monatliche Nutzer). Für private Apps gibt es keinen Weg mehr.
+> Deshalb ist **„Direkt hier rollen"** der empfohlene Weg – das Ziel (deine
+> Liste im Roulette drehen) klappt damit vollständig, ganz ohne Schreibzugriff.
+> Der Button „Auf Spotify anlegen" bleibt nur für Konten mit Firmen-Zugang.
 
 ---
 

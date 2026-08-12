@@ -9,6 +9,7 @@ import {
   type CreatedPlaylist,
 } from '../spotify/api'
 import { matchAll, parseList, type MatchResult } from '../spotify/convert'
+import type { Track } from '../spotify/types'
 
 interface PlaylistConverterProps {
   /** Eigene Spotify-User-ID (falls schon bekannt). */
@@ -17,13 +18,21 @@ interface PlaylistConverterProps {
   onCancel: () => void
   /** Die frisch erstellte Playlist direkt in der App als Quelle verwenden. */
   onUsePlaylist: (created: CreatedPlaylist, trackCount: number) => void
+  /** Die gefundenen Songs OHNE Spotify-Playlist direkt im Roulette nutzen. */
+  onUseTracks: (name: string, tracks: Track[]) => void
 }
 
 type Phase = 'input' | 'matching' | 'review' | 'creating' | 'done'
 
 const DEFAULT_NAME = 'Karaoke Roulette Import'
 
-export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: PlaylistConverterProps) {
+export function PlaylistConverter({
+  userId,
+  onError,
+  onCancel,
+  onUsePlaylist,
+  onUseTracks,
+}: PlaylistConverterProps) {
   const { t } = useI18n()
   const [phase, setPhase] = useState<Phase>('input')
   const [text, setText] = useState('')
@@ -77,7 +86,40 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
       return next
     })
 
-  // ── Playlist erstellen ──
+  /** Die aktuell ausgewählten Spotify-Tracks (übernommene Treffer). */
+  const chosenTracks = (): Track[] =>
+    results
+      .filter((r) => r.include && r.chosenIndex >= 0)
+      .map((r) => r.candidates[r.chosenIndex].track)
+
+  // ── Direkt hier rollen (kein Spotify-Schreibzugriff nötig) ──
+  const useHere = () => {
+    const trks = chosenTracks()
+    if (trks.length === 0) {
+      onError(t('convert.nothingSelected'))
+      return
+    }
+    onUseTracks(name.trim() || DEFAULT_NAME, trks)
+  }
+
+  // ── Als JSON-Datei speichern (Backup / Gast-Modus) ──
+  const exportJson = () => {
+    const trks = chosenTracks()
+    if (trks.length === 0) {
+      onError(t('convert.nothingSelected'))
+      return
+    }
+    const json = JSON.stringify({ name: name.trim() || DEFAULT_NAME, tracks: trks }, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'guest-playlist.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // ── Playlist erstellen (nur mit Firmen-Zugang; sonst 403) ──
   const create = async () => {
     const chosen = results.filter((r) => r.include && r.chosenIndex >= 0)
     if (chosen.length === 0) {
@@ -217,6 +259,13 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
             </div>
           )}
 
+          <div className="conv-note">
+            <span className="conv-note-icon" aria-hidden="true">
+              ℹ️
+            </span>
+            <p className="conv-note-text">{t('convert.writeNote')}</p>
+          </div>
+
           <div className="conv-review-head">
             <span className="conv-included">
               {t('convert.included', { n: includedCount, total: results.length })}
@@ -231,13 +280,11 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
                 🔍 {t('convert.debug.show')}
               </label>
               <button
-                className="btn btn-primary"
-                onClick={create}
+                className="btn btn-primary btn-spin glow-strong"
+                onClick={useHere}
                 disabled={includedCount === 0 || phase === 'creating'}
               >
-                {phase === 'creating'
-                  ? t('convert.creating')
-                  : t('convert.create', { n: includedCount })}
+                🎤 {t('convert.useHereTracks', { n: includedCount })}
               </button>
             </div>
           </div>
@@ -404,13 +451,31 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
             <button className="btn btn-ghost" onClick={() => setPhase('input')}>
               {t('common.back')}
             </button>
-            <button
-              className="btn btn-primary"
-              onClick={create}
-              disabled={includedCount === 0 || phase === 'creating'}
-            >
-              {phase === 'creating' ? t('convert.creating') : t('convert.create', { n: includedCount })}
-            </button>
+            <div className="conv-foot-actions">
+              <button
+                className="btn btn-ghost"
+                onClick={exportJson}
+                disabled={includedCount === 0}
+              >
+                ⤓ {t('convert.exportJson')}
+              </button>
+              <button
+                className="btn btn-ghost conv-create-btn"
+                onClick={create}
+                disabled={includedCount === 0 || phase === 'creating'}
+                title={t('convert.writeNote')}
+              >
+                {phase === 'creating' ? t('convert.creating') : t('convert.createSpotify')}
+                <span className="conv-create-hint">{t('convert.createSpotifyHint')}</span>
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={useHere}
+                disabled={includedCount === 0 || phase === 'creating'}
+              >
+                🎤 {t('convert.useHereTracks', { n: includedCount })}
+              </button>
+            </div>
           </div>
         </div>
       )}

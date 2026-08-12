@@ -118,9 +118,12 @@ async function apiSend<T>(path: string, method: 'POST' | 'PUT', body: unknown): 
   }
   if (res.status === 403) {
     throw new ApiError(
-      'Spotify hat den Schreibzugriff verweigert (403). Vermutlich fehlt die ' +
-        'Playlist-Berechtigung – bitte einmal „Spotify trennen“ und neu verbinden, ' +
-        'um Karaoke Roulette das Anlegen von Playlists zu erlauben.',
+      'Spotify verweigert den Schreibzugriff (403). Das ist eine Plattform-Regel, ' +
+        'kein Berechtigungsfehler: Apps im „Development Mode“ dürfen seit Ende 2024 ' +
+        'KEINE Playlists mehr anlegen oder ändern – unabhängig von den Scopes. Voller ' +
+        'Schreibzugriff bräuchte den „Extended Quota Mode“, den Spotify nur noch an ' +
+        'Firmen vergibt. Nutze stattdessen „Direkt hier rollen“ – die konvertierten ' +
+        'Songs kannst du sofort im Roulette verwenden, ganz ohne Playlist-Erstellung.',
       false,
       403,
     )

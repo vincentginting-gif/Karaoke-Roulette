@@ -234,9 +234,22 @@ export const translations: Record<string, Entry> = {
     ko: '결과를 확인하고 “플레이리스트 만들기” – Spotify 플레이리스트 완성.',
   },
   'convert.permNote': {
-    de: 'Beim ersten Erstellen fragt Spotify nach der Erlaubnis, Playlists anzulegen. Warst du vorher schon verbunden: einmal in den Einstellungen „Spotify trennen“ und neu verbinden.',
-    en: 'The first time, Spotify asks permission to create playlists. If you were already connected: go to settings, tap “Disconnect Spotify” and reconnect once.',
-    ko: '처음 만들 때 Spotify가 플레이리스트 생성 권한을 요청합니다. 이미 연결되어 있었다면 설정에서 “Spotify 연결 해제” 후 다시 연결하세요.',
+    de: 'Danach kannst du die gefundenen Songs sofort „Direkt hier rollen“ – ganz ohne Spotify-Playlist. (Eine echte Spotify-Playlist anzulegen ist mit privaten Apps nicht mehr möglich, dazu unten mehr.)',
+    en: 'Afterwards you can “Roll here directly” with the found songs – no Spotify playlist needed. (Creating a real Spotify playlist is no longer possible with personal apps – more below.)',
+    ko: '그다음 찾은 노래로 바로 “여기서 돌리기”를 할 수 있어요 – Spotify 플레이리스트 없이도. (개인 앱으로는 실제 Spotify 플레이리스트 생성이 더 이상 불가능합니다.)',
+  },
+  'convert.writeNote': {
+    de: 'Hinweis: Eine echte Spotify-Playlist kann diese App nicht mehr anlegen – Spotify erlaubt privaten Apps (Development Mode) seit Ende 2024 keinen Schreibzugriff mehr. Kein Problem: Mit „Direkt hier rollen“ nutzt du die Songs sofort im Roulette, und mit „Als Datei speichern“ sicherst du sie (auch für den Gast-Modus).',
+    en: 'Note: this app can no longer create a real Spotify playlist – since late 2024 Spotify blocks write access for personal apps (Development Mode). No problem: “Roll here directly” uses the songs right away, and “Save as file” backs them up (also for guest mode).',
+    ko: '참고: 이 앱은 더 이상 실제 Spotify 플레이리스트를 만들 수 없습니다 – 2024년 말부터 Spotify가 개인 앱(Development Mode)의 쓰기 접근을 차단합니다. 괜찮아요: “여기서 돌리기”로 노래를 바로 사용하고, “파일로 저장”으로 백업하세요 (게스트 모드용으로도).',
+  },
+  'convert.useHereTracks': { de: 'Direkt hier rollen ({n})', en: 'Roll here directly ({n})', ko: '여기서 바로 돌리기 ({n})' },
+  'convert.exportJson': { de: 'Als Datei speichern', en: 'Save as file', ko: '파일로 저장' },
+  'convert.createSpotify': { de: 'Auf Spotify anlegen', en: 'Create on Spotify', ko: 'Spotify에 만들기' },
+  'convert.createSpotifyHint': {
+    de: 'nur mit Firmen-Zugang',
+    en: 'business access only',
+    ko: '기업 액세스 전용',
   },
   'convert.orderHint': {
     de: 'Keine Sorge – die Reihenfolge wird automatisch erkannt. Dieser Schalter hilft nur bei kniffligen Fällen.',
