@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/i18n'
-import { MusicNoteIcon, SpotifyIcon, TrashIcon, UndoIcon } from './icons'
+import { SpotifyIcon, TrashIcon, UndoIcon } from './icons'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface SettingsPanelProps {
@@ -11,7 +11,6 @@ interface SettingsPanelProps {
   onReset: () => void
   excludedCount: number
   onManageSongs: () => void
-  onChangePlatform: () => void
   onClose: () => void
   onDisconnect: () => void
 }
@@ -51,7 +50,6 @@ export function SettingsPanel({
   onReset,
   excludedCount,
   onManageSongs,
-  onChangePlatform,
   onClose,
   onDisconnect,
 }: SettingsPanelProps) {
@@ -106,14 +104,6 @@ export function SettingsPanel({
                   ? t('settings.manageHintCount', { n: excludedCount })
                   : t('settings.manageHint')}
               </span>
-            </span>
-          </button>
-
-          <button className="setting-action" onClick={onChangePlatform}>
-            <MusicNoteIcon className="setting-action-icon" />
-            <span className="setting-text">
-              <span className="setting-label">{t('settings.changePlatform')}</span>
-              <span className="setting-hint">{t('settings.changePlatformHint')}</span>
             </span>
           </button>
 

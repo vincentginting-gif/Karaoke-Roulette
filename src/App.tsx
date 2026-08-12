@@ -44,12 +44,9 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
-import { PlatformPicker } from './components/PlatformPicker'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
 import { useI18n } from './i18n/i18n'
-
-const PLATFORM_KEY = 'kr.platform'
 
 type View = 'home' | 'picker' | 'discover' | 'artist' | 'album' | 'roulette' | 'result' | 'manage'
 
@@ -125,9 +122,6 @@ export function App() {
   const [view, setView] = useState<View>('home')
   const [error, setError] = useState<string | null>(null)
 
-  // Gewählte Plattform (nur Spotify aktiv); null => Plattform-Startscreen.
-  const [platform, setPlatform] = useState<string | null>(() => localStorage.getItem(PLATFORM_KEY))
-
   // Playlists (nur bei Bedarf geladen)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
   const [playlistsLoading, setPlaylistsLoading] = useState(false)
@@ -170,16 +164,6 @@ export function App() {
   const pool = useMemo(() => tracks.filter((t) => !excludedIds.has(t.id)), [tracks, excludedIds])
 
   const showError = useCallback((msg: string) => setError(msg), [])
-
-  // Plattform-Auswahl (aktuell nur Spotify aktiv).
-  const selectPlatform = useCallback(() => {
-    localStorage.setItem(PLATFORM_KEY, 'spotify')
-    setPlatform('spotify')
-  }, [])
-  const changePlatform = useCallback(() => {
-    localStorage.removeItem(PLATFORM_KEY)
-    setPlatform(null)
-  }, [])
 
   // ── Fehler aus Auth-Hook übernehmen ──
   useEffect(() => {
@@ -418,15 +402,6 @@ export function App() {
 
   // ── Rendering ──────────────────────────────────────────────
 
-  // Erster Startscreen: Plattform-Auswahl.
-  if (!platform) {
-    return (
-      <Shell connected={false}>
-        <PlatformPicker onSelectSpotify={selectPlatform} />
-      </Shell>
-    )
-  }
-
   if (!isConfigured()) {
     return (
       <Shell connected={false}>
@@ -563,10 +538,6 @@ export function App() {
           onManageSongs={() => {
             setSettingsOpen(false)
             setView('manage')
-          }}
-          onChangePlatform={() => {
-            setSettingsOpen(false)
-            changePlatform()
           }}
           onClose={() => setSettingsOpen(false)}
           onDisconnect={() => {

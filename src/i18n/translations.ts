@@ -28,42 +28,6 @@ export const translations: Record<string, Entry> = {
   'common.song': { de: 'Song', en: 'song', ko: '곡' },
   'common.songs': { de: 'Songs', en: 'songs', ko: '곡' },
 
-  // ── Plattform-Auswahl ──
-  'platform.title': {
-    de: 'Welche Plattform nutzt du für Lieder?',
-    en: 'Which platform do you use for music?',
-    ko: '어떤 음악 플랫폼을 사용하시나요?',
-  },
-  'platform.subtitle': {
-    de: 'Wähle deinen Musikdienst.',
-    en: 'Choose your music service.',
-    ko: '음악 서비스를 선택하세요.',
-  },
-  'platform.supported': { de: 'Voll unterstützt', en: 'Fully supported', ko: '완전 지원' },
-  'platform.comingSoon': { de: 'Bald verfügbar', en: 'Coming soon', ko: '곧 제공 예정' },
-  'platform.continue': { de: 'Weiter mit Spotify', en: 'Continue with Spotify', ko: 'Spotify로 계속' },
-  'platform.unavailableTitle': {
-    de: '{name} – bald verfügbar',
-    en: '{name} – coming soon',
-    ko: '{name} – 곧 제공 예정',
-  },
-  'platform.apple.body': {
-    de: 'Apple Music benötigt einen kostenpflichtigen Apple-Developer-Account und einen signierten Token (MusicKit). Sobald der vorliegt, lässt es sich ergänzen.',
-    en: 'Apple Music requires a paid Apple Developer account and a signed token (MusicKit). It can be added once that is available.',
-    ko: 'Apple Music은 유료 Apple 개발자 계정과 서명된 토큰(MusicKit)이 필요합니다. 준비되면 추가할 수 있습니다.',
-  },
-  'platform.melon.body': {
-    de: 'Melon bietet leider keine offizielle öffentliche API für Fremd-Apps, daher ist eine echte Integration derzeit nicht möglich.',
-    en: 'Melon unfortunately offers no official public API for third-party apps, so a real integration is currently not possible.',
-    ko: 'Melon은 외부 앱을 위한 공식 공개 API를 제공하지 않아 현재 실제 연동이 어렵습니다.',
-  },
-  'platform.youtube.body': {
-    de: 'YouTube Music hat keine offizielle öffentliche API, die im Browser ohne Server nutzbar wäre. Daher noch nicht integriert.',
-    en: 'YouTube Music has no official public API usable in the browser without a server, so it is not integrated yet.',
-    ko: 'YouTube Music은 서버 없이 브라우저에서 사용할 수 있는 공식 공개 API가 없어 아직 연동되지 않았습니다.',
-  },
-  'platform.useSpotify': { de: 'Spotify verwenden', en: 'Use Spotify', ko: 'Spotify 사용하기' },
-
   // ── Verbinden ──
   'connect.heading': { de: 'Verbinde Spotify', en: 'Connect Spotify', ko: 'Spotify 연결' },
   'connect.text': {
@@ -232,11 +196,6 @@ export const translations: Record<string, Entry> = {
   'result.open': { de: 'Auf Spotify öffnen', en: 'Open in Spotify', ko: 'Spotify에서 열기' },
   'result.again': { de: 'Noch einen Song', en: 'One more song', ko: '한 곡 더' },
   'result.switch': { de: 'Playlist wechseln', en: 'Change playlist', ko: '플레이리스트 변경' },
-  'result.openElsewhere': {
-    de: 'Auf anderer Plattform öffnen',
-    en: 'Open on another platform',
-    ko: '다른 플랫폼에서 열기',
-  },
 
   // ── Roulette ──
   'roulette.surprise': { de: 'Große Überraschung …', en: 'Big surprise …', ko: '깜짝 등장 …' },
@@ -281,12 +240,6 @@ export const translations: Record<string, Entry> = {
     de: 'Abmelden und Verbindung lösen',
     en: 'Sign out and disconnect',
     ko: '로그아웃 및 연결 해제',
-  },
-  'settings.changePlatform': { de: 'Plattform wechseln', en: 'Change platform', ko: '플랫폼 변경' },
-  'settings.changePlatformHint': {
-    de: 'Zurück zur Plattform-Auswahl',
-    en: 'Back to platform selection',
-    ko: '플랫폼 선택으로 돌아가기',
   },
 
   // ── App: Spinner & Fehler ──

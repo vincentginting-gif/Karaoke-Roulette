@@ -11,10 +11,6 @@ Case-Opening-artigen **Roulette-Animation** präsentiert.
 
 ## ✨ Features
 
-- **Plattform-Startscreen:** Auswahl des Musikdienstes zu Beginn. **Spotify** ist
-  voll integriert; **Apple Music**, **Melon** und **YouTube Music** sind als
-  „bald verfügbar“ angelegt (echte Integration bräuchte kostenpflichtige
-  Developer-Accounts bzw. gibt es keine nutzbare öffentliche API).
 - **Mehrsprachig:** Deutsch, English und 한국어 – umschaltbar oben im Header und in
   den Einstellungen; Auswahl wird gespeichert und aus der Browsersprache
   vorbelegt.
