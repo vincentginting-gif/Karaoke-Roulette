@@ -4,6 +4,7 @@ import type { Track } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
 import { easeOutCase } from '../roulette/easing'
 import { playStart, playStop, playTick } from '../roulette/audio'
+import { fireGoldConfetti } from '../roulette/confetti'
 import { AlbumCover } from './AlbumCover'
 
 interface RouletteProps {
@@ -147,6 +148,8 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
       cards[lastCenter]?.classList.remove('is-center')
       cards[winnerIndex]?.classList.add('is-center', 'is-winner')
       if (soundRef.current) playStop()
+      // Jackpot! Gold-Gewinner -> Konfetti-Feuerwerk.
+      if (winnerRarity === 'gold') fireGoldConfetti()
       // Kurz den Gewinner unter dem Marker zeigen, dann direkt das Ergebnis.
       timeoutId = window.setTimeout(() => onCompleteRef.current(), reduceMotion ? 250 : 450)
     }
