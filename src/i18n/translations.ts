@@ -51,6 +51,11 @@ export const translations: Record<string, Entry> = {
     ko: 'Spotify나 다른 플랫폼에서 노래를 열고 노래를 시작하세요.',
   },
   'welcome.start': { de: 'Playlist wählen', en: 'Choose playlist', ko: '플레이리스트 선택' },
+  'welcome.guest': {
+    de: 'Ohne Login starten (Gast)',
+    en: 'Start without login (guest)',
+    ko: '로그인 없이 시작 (게스트)',
+  },
 
   // ── Verbinden ──
   'connect.heading': { de: 'Verbinde Spotify', en: 'Connect Spotify', ko: 'Spotify 연결' },
@@ -269,6 +274,22 @@ export const translations: Record<string, Entry> = {
     de: 'Abmelden und Verbindung lösen',
     en: 'Sign out and disconnect',
     ko: '로그아웃 및 연결 해제',
+  },
+  'settings.exportGuest': {
+    de: 'Gast-Playlist exportieren',
+    en: 'Export guest playlist',
+    ko: '게스트 플레이리스트 내보내기',
+  },
+  'settings.exportGuestHint': {
+    de: 'JSON für den Login-freien Gast-Modus herunterladen (nach public/ legen)',
+    en: 'Download JSON for the login-free guest mode (place in public/)',
+    ko: '로그인 없는 게스트 모드용 JSON 다운로드 (public/에 넣기)',
+  },
+  'settings.exitGuest': { de: 'Gast-Modus beenden', en: 'Exit guest mode', ko: '게스트 모드 종료' },
+  'settings.exitGuestHint': {
+    de: 'Zurück zur Startseite',
+    en: 'Back to the homepage',
+    ko: '홈으로 돌아가기',
   },
 
   // ── App: Spinner & Fehler ──

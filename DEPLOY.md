@@ -75,6 +75,39 @@ Damit der Login funktioniert, muss Spotify die neue Adresse kennen:
 Jeder `git push` auf den Branch löst bei Vercel automatisch ein neues Deployment
 aus. Nichts weiter zu tun – kurz warten, dann am Handy `Neu laden`.
 
+## 👥 Gast-Modus – Freunde rollen ohne eigenen Spotify-Login
+
+Im **Development Mode** kannst du nur wenige Personen freischalten. Damit
+Freunde trotzdem mitspielen können, ohne sich selbst mit Spotify zu verbinden,
+gibt es einen **Gast-Modus**. Er erscheint als Button „Ohne Login starten“ auf
+der Startseite – sobald **eine** der beiden Quellen eingerichtet ist:
+
+### Variante A – Snapshot (empfohlen, kein Secret, zuverlässig)
+
+1. Verbinde dich selbst mit Spotify und öffne deine Karaoke-Playlist.
+2. **Einstellungen → „Gast-Playlist exportieren“** → lädt `guest-playlist.json`.
+3. Lege die Datei in den Ordner **`public/`** des Projekts:
+   `public/guest-playlist.json`
+4. `git add . && git commit && git push` → Vercel deployt automatisch.
+
+Fertig: Besucher sehen den Gast-Button und rollen über diese Songs – ganz ohne
+Login. Änderst du die Playlist, exportierst du einmal neu und pushst wieder.
+
+### Variante B – Live-Proxy (immer aktuell, braucht dein Client-Secret)
+
+1. In **Vercel → Settings → Environment Variables** setzen:
+   - `SPOTIFY_CLIENT_ID` – deine Client-ID
+   - `SPOTIFY_CLIENT_SECRET` – dein **Client-Secret** (nur serverseitig, sicher)
+   - `VITE_GUEST_PLAYLIST_ID` – ID einer **öffentlichen** Playlist
+2. Neu deployen. Die Funktion `/api/guest-playlist` lädt die Playlist live.
+
+> ⚠️ Wegen der Spotify-Migration (Feb. 2026) ist nicht garantiert, dass
+> App-Tokens fremde/öffentliche Playlists auslesen dürfen. Klappt der Live-Proxy
+> nicht, greift automatisch der Snapshot (Variante A) – richte im Zweifel
+> beide ein.
+
+---
+
 ## Häufige Stolpersteine
 
 - **„INVALID_CLIENT: Invalid redirect URI“** → Die Vercel-URL ist bei Spotify

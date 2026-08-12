@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/i18n'
-import { SpotifyIcon, TrashIcon, UndoIcon } from './icons'
+import { ExternalIcon, MusicNoteIcon, SpotifyIcon, TrashIcon, UndoIcon } from './icons'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface SettingsPanelProps {
@@ -11,6 +11,10 @@ interface SettingsPanelProps {
   onReset: () => void
   excludedCount: number
   onManageSongs: () => void
+  isGuest: boolean
+  canExportGuest: boolean
+  onExportGuest: () => void
+  onExitGuest: () => void
   onClose: () => void
   onDisconnect: () => void
 }
@@ -50,6 +54,10 @@ export function SettingsPanel({
   onReset,
   excludedCount,
   onManageSongs,
+  isGuest,
+  canExportGuest,
+  onExportGuest,
+  onExitGuest,
   onClose,
   onDisconnect,
 }: SettingsPanelProps) {
@@ -107,13 +115,33 @@ export function SettingsPanel({
             </span>
           </button>
 
-          <button className="setting-action danger" onClick={onDisconnect}>
-            <SpotifyIcon className="setting-action-icon" />
-            <span className="setting-text">
-              <span className="setting-label">{t('settings.disconnect')}</span>
-              <span className="setting-hint">{t('settings.disconnectHint')}</span>
-            </span>
-          </button>
+          {canExportGuest && (
+            <button className="setting-action" onClick={onExportGuest}>
+              <ExternalIcon className="setting-action-icon" />
+              <span className="setting-text">
+                <span className="setting-label">{t('settings.exportGuest')}</span>
+                <span className="setting-hint">{t('settings.exportGuestHint')}</span>
+              </span>
+            </button>
+          )}
+
+          {isGuest ? (
+            <button className="setting-action" onClick={onExitGuest}>
+              <MusicNoteIcon className="setting-action-icon" />
+              <span className="setting-text">
+                <span className="setting-label">{t('settings.exitGuest')}</span>
+                <span className="setting-hint">{t('settings.exitGuestHint')}</span>
+              </span>
+            </button>
+          ) : (
+            <button className="setting-action danger" onClick={onDisconnect}>
+              <SpotifyIcon className="setting-action-icon" />
+              <span className="setting-text">
+                <span className="setting-label">{t('settings.disconnect')}</span>
+                <span className="setting-hint">{t('settings.disconnectHint')}</span>
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </div>

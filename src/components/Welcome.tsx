@@ -5,10 +5,12 @@ interface WelcomeProps {
   connected: boolean
   onConnect: () => void
   onStart: () => void
+  guestAvailable?: boolean
+  onGuest?: () => void
 }
 
 /** Homepage / Landing: erklärt die App und führt zum Start. */
-export function Welcome({ connected, onConnect, onStart }: WelcomeProps) {
+export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest }: WelcomeProps) {
   const { t } = useI18n()
   const steps = [t('welcome.step1'), t('welcome.step2'), t('welcome.step3')]
 
@@ -42,10 +44,18 @@ export function Welcome({ connected, onConnect, onStart }: WelcomeProps) {
           {t('welcome.start')}
         </button>
       ) : (
-        <button className="btn btn-spotify" onClick={onConnect}>
-          <SpotifyIcon className="btn-icon" />
-          {t('connect.button')}
-        </button>
+        <div className="welcome-cta">
+          <button className="btn btn-spotify" onClick={onConnect}>
+            <SpotifyIcon className="btn-icon" />
+            {t('connect.button')}
+          </button>
+          {guestAvailable && onGuest && (
+            <button className="btn btn-ghost" onClick={onGuest}>
+              <DiceIcon className="btn-icon" />
+              {t('welcome.guest')}
+            </button>
+          )}
+        </div>
       )}
     </section>
   )

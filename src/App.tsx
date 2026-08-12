@@ -31,6 +31,7 @@ import {
 } from './storage/storage'
 import { buildStrip, pickWinner, WINNER_INDEX } from './roulette/engine'
 import { unlockAudio } from './roulette/audio'
+import { GUEST_ID, loadGuestPlaylist } from './guest/guest'
 
 import { ConfigNeeded } from './components/ConfigNeeded'
 import { Welcome } from './components/Welcome'
@@ -99,6 +100,19 @@ function makeArtistPlaylist(names: string[]): Playlist {
   }
 }
 
+/** Baut die synthetische "Playlist" für den Gast-Modus. */
+function makeGuestPlaylist(name: string): Playlist {
+  return {
+    id: GUEST_ID,
+    name,
+    imageUrl: null,
+    trackCount: 0,
+    ownerName: 'Gast',
+    ownerId: '',
+    isOwn: true,
+  }
+}
+
 /** Baut eine synthetische "Playlist" für eine Album-Auswahl. */
 function makeAlbumPlaylist(names: string[]): Playlist {
   return {
@@ -121,6 +135,10 @@ export function App() {
 
   const [view, setView] = useState<View>('home')
   const [error, setError] = useState<string | null>(null)
+
+  // Gast-Modus (rollen ohne Spotify-Login)
+  const [isGuest, setIsGuest] = useState(false)
+  const [guestName, setGuestName] = useState<string | null>(null)
 
   // Playlists (nur bei Bedarf geladen)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -169,6 +187,17 @@ export function App() {
   useEffect(() => {
     if (auth.error) setError(auth.error)
   }, [auth.error])
+
+  // ── Gast-Quelle einmalig prüfen (für den Gast-Button auf der Homepage) ──
+  useEffect(() => {
+    let cancelled = false
+    void loadGuestPlaylist().then((g) => {
+      if (!cancelled && g) setGuestName(g.name)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // ── Bei Verbindung: eigene User-ID holen + letzte Playlist wiederherstellen ──
   useEffect(() => {
@@ -227,8 +256,11 @@ export function App() {
     }
   }
 
-  /** Lädt Tracks je nach Quelle: Playlist, Genre, Artist oder Album. */
+  /** Lädt Tracks je nach Quelle: Gast, Playlist, Genre, Artist oder Album. */
   function loadTracksFor(pl: Playlist): Promise<Track[]> {
+    if (pl.id === GUEST_ID) {
+      return loadGuestPlaylist().then((g) => g?.tracks ?? [])
+    }
     if (pl.id.startsWith(ARTIST_PREFIX)) {
       // Namen + Limit aus dem Storage (mit der aktiven Quelle gespeichert).
       return searchTracksByArtist(loadArtistNames(), loadArtistLimit())
@@ -329,6 +361,42 @@ export function App() {
     setView('home')
   }, [])
 
+  // ── Gast-Modus starten / beenden ──
+  const selectGuest = useCallback(async () => {
+    const g = await loadGuestPlaylist()
+    if (!g) {
+      setError('Gast-Playlist ist nicht verfügbar.')
+      return
+    }
+    const pl = makeGuestPlaylist(g.name)
+    setIsGuest(true)
+    setActivePlaylist(pl)
+    setDrawnIds(loadDrawnIds(pl.id))
+    setExcludedIds(loadExcludedIds(pl.id))
+    setLastWinnerId(null)
+    setView('home')
+  }, [])
+
+  const exitGuest = useCallback(() => {
+    setIsGuest(false)
+    setActivePlaylist(null)
+    setTracks([])
+    setView('home')
+  }, [])
+
+  /** Aktuelle Playlist als Gast-Snapshot (JSON) herunterladen. */
+  const exportGuest = useCallback(() => {
+    if (!activePlaylist || tracks.length === 0) return
+    const json = JSON.stringify({ name: activePlaylist.name, tracks }, null, 2)
+    const blob = new Blob([json], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'guest-playlist.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [activePlaylist, tracks])
+
   // ── Song ziehen (Roulette starten) ──
   const spin = useCallback(() => {
     if (pool.length === 0) {
@@ -398,7 +466,8 @@ export function App() {
 
   // ── Rendering ──────────────────────────────────────────────
 
-  if (!isConfigured()) {
+  // Fehlende Client-ID nur melden, wenn es auch keinen Gast-Weg gibt.
+  if (!isConfigured() && !isGuest && !guestName) {
     return (
       <Shell connected={false}>
         <ConfigNeeded />
@@ -412,10 +481,18 @@ export function App() {
 
   let content: React.ReactNode
 
-  if (auth.status === 'checking') {
+  if (auth.status === 'checking' && !isGuest) {
     content = <Spinner label={t('app.checking')} />
-  } else if (auth.status === 'disconnected') {
-    content = <Welcome connected={false} onConnect={auth.connect} onStart={() => {}} />
+  } else if (auth.status === 'disconnected' && !isGuest) {
+    content = (
+      <Welcome
+        connected={false}
+        onConnect={auth.connect}
+        onStart={() => {}}
+        guestAvailable={Boolean(guestName)}
+        onGuest={selectGuest}
+      />
+    )
   } else if (view === 'discover') {
     content = (
       <DiscoverPicker
@@ -504,7 +581,7 @@ export function App() {
       <Home
         playlist={activePlaylist}
         onSpin={spin}
-        onChangePlaylist={openPicker}
+        onChangePlaylist={isGuest ? exitGuest : openPicker}
         onManageSongs={() => setView('manage')}
         onReset={resetDrawn}
         remaining={remaining}
@@ -513,7 +590,7 @@ export function App() {
     )
   }
 
-  const showSettingsButton = auth.status === 'connected' && Boolean(activePlaylist)
+  const showSettingsButton = Boolean(activePlaylist) && (auth.status === 'connected' || isGuest)
 
   return (
     <Shell
@@ -534,6 +611,16 @@ export function App() {
           onManageSongs={() => {
             setSettingsOpen(false)
             setView('manage')
+          }}
+          isGuest={isGuest}
+          canExportGuest={!isGuest && tracks.length > 0}
+          onExportGuest={() => {
+            setSettingsOpen(false)
+            exportGuest()
+          }}
+          onExitGuest={() => {
+            setSettingsOpen(false)
+            exitGuest()
           }}
           onClose={() => setSettingsOpen(false)}
           onDisconnect={() => {
