@@ -19,6 +19,39 @@ interface RouletteProps {
 
 const DURATION_MS = 5800
 
+// ── CS:GO-artiges Rarity-System ──────────────────────────────
+// Jede Karte bekommt anhand ihrer Track-ID STABIL eine Seltenheitsstufe
+// (immer dieselbe Farbe pro Song). Die Gewichte ahmen grob die CS:GO-
+// Drop-Verteilung nach: viel Blau, selten Rot. Der Gewinner ist immer
+// "gold" – der glänzende Payoff unter dem Marker.
+const RARITIES = [
+  { key: 'milspec', weight: 58 },
+  { key: 'restricted', weight: 24 },
+  { key: 'classified', weight: 12 },
+  { key: 'covert', weight: 6 },
+] as const
+
+/** Schneller, stabiler String-Hash (FNV-1a). */
+function hashStr(s: string): number {
+  let h = 2166136261
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+/** Deterministische Rarity-Stufe für eine Karte (Position im Strip fließt mit ein). */
+function rarityFor(track: Track, index: number): string {
+  const total = RARITIES.reduce((a, r) => a + r.weight, 0)
+  let n = hashStr((track.id || track.title || '') + ':' + index) % total
+  for (const r of RARITIES) {
+    if (n < r.weight) return r.key
+    n -= r.weight
+  }
+  return 'milspec'
+}
+
 /**
  * Das Herzstück: eine deterministische, frame-rate-unabhängige
  * Case-Opening-artige Roulette-Animation.
@@ -149,12 +182,16 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
 
         {/* Beweglicher Karten-Track */}
         <div className="roulette-track" ref={trackRef}>
-          {strip.map((track, i) =>
-            surprise ? (
-              // Ueberraschungs-Modus: Mystery-Karte ohne Cover/Titel.
-              <article className="song-card song-card-mystery" key={i}>
-                <div className="song-card-cover mystery-cover">
-                  <span className="mystery-mark">?</span>
+          {strip.map((track, i) => {
+            // Gewinner bekommt IMMER Gold – der glänzende Reveal.
+            const rarity = i === winnerIndex ? 'gold' : rarityFor(track, i)
+            return surprise ? (
+              // Ueberraschungs-Modus: Mystery-Karte (goldenes "?").
+              <article className="song-card song-card-mystery" data-rarity="gold" key={i}>
+                <div className="song-card-slab">
+                  <div className="song-card-cover mystery-cover">
+                    <span className="mystery-mark">?</span>
+                  </div>
                 </div>
                 <div className="song-card-info">
                   <span className="song-card-title">???</span>
@@ -162,22 +199,17 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
                 </div>
               </article>
             ) : (
-              <article className="song-card" key={i}>
-                {track.coverUrl && (
-                  <div
-                    className="song-card-glow"
-                    style={{ backgroundImage: `url(${track.coverUrl})` }}
-                    aria-hidden="true"
-                  />
-                )}
-                <AlbumCover url={track.coverUrl} alt={track.title} className="song-card-cover" />
+              <article className="song-card" data-rarity={rarity} key={i}>
+                <div className="song-card-slab">
+                  <AlbumCover url={track.coverUrl} alt={track.title} className="song-card-cover" />
+                </div>
                 <div className="song-card-info">
                   <span className="song-card-title">{track.title}</span>
                   <span className="song-card-artist">{track.artist}</span>
                 </div>
               </article>
-            ),
-          )}
+            )
+          })}
         </div>
       </div>
     </section>
