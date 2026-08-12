@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 // (useRef für stabile Callback-Refs, damit die Animation genau einmal läuft)
 import type { Track } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
@@ -53,6 +53,20 @@ function rarityFor(track: Track, index: number): string {
 }
 
 /**
+ * Rarity des GEWINNERS – frisch pro Spin gewürfelt.
+ * Gold ist der ultra-seltene Jackpot mit exakt 1/10000 Chance (0,01 %);
+ * darunter CS:GO-artig gestaffelt (viel Blau, selten Rot).
+ */
+function rollWinnerRarity(): string {
+  const r = Math.random()
+  if (r < 1 / 10000) return 'gold' // 0,01 %  – Jackpot
+  if (r < 0.05) return 'covert' // ~4,99 % – rot
+  if (r < 0.2) return 'classified' // 15 %    – pink
+  if (r < 0.5) return 'restricted' // 30 %    – lila
+  return 'milspec' // 50 %    – blau
+}
+
+/**
  * Das Herzstück: eine deterministische, frame-rate-unabhängige
  * Case-Opening-artige Roulette-Animation.
  *
@@ -67,6 +81,10 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
   const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+
+  // Gewinner-Rarity genau EINMAL pro Ziehung würfeln (stabil über Re-Renders).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const winnerRarity = useMemo(rollWinnerRarity, [strip, winnerIndex])
 
   // Aktuellste Callback-/Flag-Werte in Refs halten, damit der Effekt NICHT
   // von ihrer Identität abhängt und die Animation genau EINMAL läuft
@@ -183,8 +201,8 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
         {/* Beweglicher Karten-Track */}
         <div className="roulette-track" ref={trackRef}>
           {strip.map((track, i) => {
-            // Gewinner bekommt IMMER Gold – der glänzende Reveal.
-            const rarity = i === winnerIndex ? 'gold' : rarityFor(track, i)
+            // Gewinner: pro Spin gewürfelte Rarity (Gold = 1/10000).
+            const rarity = i === winnerIndex ? winnerRarity : rarityFor(track, i)
             return surprise ? (
               // Ueberraschungs-Modus: Mystery-Karte (goldenes "?").
               <article className="song-card song-card-mystery" data-rarity="gold" key={i}>
