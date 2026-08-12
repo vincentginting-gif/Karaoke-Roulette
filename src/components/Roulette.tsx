@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react'
 // (useRef für stabile Callback-Refs, damit die Animation genau einmal läuft)
 import type { Track } from '../spotify/types'
+import { useI18n } from '../i18n/i18n'
 import { easeOutCase } from '../roulette/easing'
 import { playStart, playStop, playTick } from '../roulette/audio'
 import { AlbumCover } from './AlbumCover'
@@ -30,6 +31,7 @@ const DURATION_MS = 5800
  * unabhängig von der Bildwiederholrate.
  */
 export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplete }: RouletteProps) {
+  const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
@@ -132,7 +134,7 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplet
 
   return (
     <section className="stage stage-center roulette fade-in">
-      <p className="roulette-hint">{surprise ? 'Große Überraschung …' : 'Welcher Song kommt?'}</p>
+      <p className="roulette-hint">{surprise ? t('roulette.surprise') : t('roulette.which')}</p>
 
       <div className="roulette-viewport" ref={viewportRef}>
         {/* Fester Marker in der Mitte: eine saubere Linie mit bündigen Pfeilen */}

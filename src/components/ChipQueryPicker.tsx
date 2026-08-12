@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../i18n/i18n'
 import { DiceIcon } from './icons'
 
 interface ChipQueryPickerProps {
@@ -17,12 +18,7 @@ interface ChipQueryPickerProps {
   onCancel: () => void
 }
 
-const LIMIT_OPTIONS = [
-  { value: 5, label: '5' },
-  { value: 10, label: '10' },
-  { value: 20, label: '20' },
-  { value: 0, label: 'Alle' },
-]
+const LIMIT_VALUES = [5, 10, 20, 0]
 
 /**
  * Wiederverwendbarer Picker: Namen als Chips sammeln, ein Limit pro Name
@@ -41,6 +37,7 @@ export function ChipQueryPicker({
   onStart,
   onCancel,
 }: ChipQueryPickerProps) {
+  const { t } = useI18n()
   const [items, setItems] = useState<string[]>(initialItems)
   const [input, setInput] = useState('')
   const [input2, setInput2] = useState('')
@@ -79,7 +76,7 @@ export function ChipQueryPicker({
           <p className="picker-subtitle">{subtitle}</p>
         </div>
         <button className="btn btn-ghost" onClick={onCancel}>
-          Zu Playlists
+          {t('common.toPlaylists')}
         </button>
       </header>
 
@@ -96,7 +93,7 @@ export function ChipQueryPicker({
           placeholder={placeholder}
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          aria-label={`${itemNoun} hinzufügen`}
+          aria-label={t('chip.addItem', { noun: itemNoun })}
         />
         {secondaryPlaceholder && (
           <input
@@ -105,11 +102,11 @@ export function ChipQueryPicker({
             placeholder={secondaryPlaceholder}
             value={input2}
             onChange={(e) => setInput2(e.target.value)}
-            aria-label="Interpret (optional)"
+            aria-label={secondaryPlaceholder}
           />
         )}
         <button type="submit" className="btn btn-ghost artist-add-btn" disabled={!input.trim()}>
-          Hinzufügen
+          {t('common.add')}
         </button>
       </form>
 
@@ -121,8 +118,8 @@ export function ChipQueryPicker({
               <button
                 className="artist-chip-x"
                 onClick={() => remove(a)}
-                aria-label={`${a} entfernen`}
-                title="Entfernen"
+                aria-label={t('chip.removeItem', { name: a })}
+                title={t('chip.removeItem', { name: a })}
               >
                 ×
               </button>
@@ -133,7 +130,7 @@ export function ChipQueryPicker({
 
       {openSuggestions.length > 0 && (
         <div className="artist-suggest">
-          <span className="artist-suggest-label">Vorschläge:</span>
+          <span className="artist-suggest-label">{t('chip.suggestions')}</span>
           {openSuggestions.map((s) => (
             <button key={s} className="artist-suggest-chip" onClick={() => addRaw(s)}>
               + {s}
@@ -143,16 +140,16 @@ export function ChipQueryPicker({
       )}
 
       <div className="limit-row">
-        <span className="limit-label">Songs pro {itemNoun}</span>
-        <div className="limit-chips" role="group" aria-label={`Songs pro ${itemNoun}`}>
-          {LIMIT_OPTIONS.map((o) => (
+        <span className="limit-label">{t('chip.limit', { noun: itemNoun })}</span>
+        <div className="limit-chips" role="group" aria-label={t('chip.limit', { noun: itemNoun })}>
+          {LIMIT_VALUES.map((v) => (
             <button
-              key={o.value}
-              className={`limit-chip${limit === o.value ? ' limit-chip-active' : ''}`}
-              onClick={() => setLimit(o.value)}
-              aria-pressed={limit === o.value}
+              key={v}
+              className={`limit-chip${limit === v ? ' limit-chip-active' : ''}`}
+              onClick={() => setLimit(v)}
+              aria-pressed={limit === v}
             >
-              {o.label}
+              {v === 0 ? t('chip.all') : v}
             </button>
           ))}
         </div>
@@ -166,10 +163,10 @@ export function ChipQueryPicker({
         >
           <DiceIcon className="btn-icon" />
           {loading
-            ? 'Lädt…'
+            ? t('common.loading')
             : items.length === 0
-              ? `${itemNoun} hinzufügen`
-              : `Songs laden (${items.length})`}
+              ? t('chip.addItem', { noun: itemNoun })
+              : t('chip.load', { n: items.length })}
         </button>
       </div>
     </section>

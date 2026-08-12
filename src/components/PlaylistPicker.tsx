@@ -1,4 +1,5 @@
 import type { Playlist } from '../spotify/types'
+import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
 import { Spinner } from './Spinner'
 
@@ -22,16 +23,17 @@ export function PlaylistPicker({
   onAlbums,
   onCancel,
 }: PlaylistPickerProps) {
+  const { t } = useI18n()
   return (
     <section className="stage fade-in">
       <header className="picker-header">
         <div>
-          <h2 className="picker-title">Wähle deine Karaoke-Playlist</h2>
-          <p className="picker-subtitle">Aus dieser Playlist wird gezogen.</p>
+          <h2 className="picker-title">{t('picker.title')}</h2>
+          <p className="picker-subtitle">{t('picker.subtitle')}</p>
         </div>
         {onCancel && (
           <button className="btn btn-ghost" onClick={onCancel}>
-            Zurück
+            {t('common.back')}
           </button>
         )}
       </header>
@@ -40,8 +42,8 @@ export function PlaylistPicker({
         <button className="discover-banner" onClick={onDiscover}>
           <span className="discover-banner-emoji">🎧</span>
           <span className="discover-banner-text">
-            <span className="discover-banner-title">Nach Genre entdecken</span>
-            <span className="discover-banner-hint">Songs aus ganz Spotify – nach Genre</span>
+            <span className="discover-banner-title">{t('picker.genre.title')}</span>
+            <span className="discover-banner-hint">{t('picker.genre.hint')}</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>
@@ -49,8 +51,8 @@ export function PlaylistPicker({
         <button className="discover-banner" onClick={onArtists}>
           <span className="discover-banner-emoji">🎙️</span>
           <span className="discover-banner-text">
-            <span className="discover-banner-title">Nach Artist</span>
-            <span className="discover-banner-hint">Zufällige Songs bestimmter Artists</span>
+            <span className="discover-banner-title">{t('picker.artist.title')}</span>
+            <span className="discover-banner-hint">{t('picker.artist.hint')}</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>
@@ -58,18 +60,18 @@ export function PlaylistPicker({
         <button className="discover-banner" onClick={onAlbums}>
           <span className="discover-banner-emoji">💿</span>
           <span className="discover-banner-text">
-            <span className="discover-banner-title">Nach Album</span>
-            <span className="discover-banner-hint">Zufällige Songs aus bestimmten Alben</span>
+            <span className="discover-banner-title">{t('picker.album.title')}</span>
+            <span className="discover-banner-hint">{t('picker.album.hint')}</span>
           </span>
           <span className="discover-banner-arrow">→</span>
         </button>
       </div>
 
       {loading ? (
-        <Spinner label="Playlists werden geladen…" />
+        <Spinner label={t('picker.loading')} />
       ) : playlists.length === 0 ? (
         <div className="empty-state">
-          <p>Es wurden keine Playlists in deinem Spotify-Konto gefunden.</p>
+          <p>{t('picker.empty')}</p>
         </div>
       ) : (
         <ul className="playlist-grid">
@@ -78,11 +80,7 @@ export function PlaylistPicker({
               <button
                 className={`playlist-card${pl.isOwn ? '' : ' playlist-card-foreign'}`}
                 onClick={() => onSelect(pl)}
-                title={
-                  pl.isOwn
-                    ? pl.name
-                    : `${pl.name} – von Spotify erstellt, über die API evtl. nicht ladbar`
-                }
+                title={pl.isOwn ? pl.name : t('picker.foreign', { name: pl.name })}
               >
                 <div className="playlist-cover-wrap">
                   <AlbumCover url={pl.imageUrl} alt={pl.name} className="playlist-cover" />
@@ -91,7 +89,7 @@ export function PlaylistPicker({
                 <div className="playlist-info">
                   <span className="playlist-name">{pl.name}</span>
                   <span className="playlist-count">
-                    {pl.trackCount} {pl.trackCount === 1 ? 'Song' : 'Songs'}
+                    {pl.trackCount} {t(pl.trackCount === 1 ? 'common.song' : 'common.songs')}
                   </span>
                 </div>
               </button>

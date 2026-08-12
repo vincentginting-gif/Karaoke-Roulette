@@ -1,4 +1,6 @@
-import { SpotifyIcon, TrashIcon, UndoIcon } from './icons'
+import { useI18n } from '../i18n/i18n'
+import { MusicNoteIcon, SpotifyIcon, TrashIcon, UndoIcon } from './icons'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface SettingsPanelProps {
   soundEnabled: boolean
@@ -9,6 +11,7 @@ interface SettingsPanelProps {
   onReset: () => void
   excludedCount: number
   onManageSongs: () => void
+  onChangePlatform: () => void
   onClose: () => void
   onDisconnect: () => void
 }
@@ -48,41 +51,48 @@ export function SettingsPanel({
   onReset,
   excludedCount,
   onManageSongs,
+  onChangePlatform,
   onClose,
   onDisconnect,
 }: SettingsPanelProps) {
+  const { t } = useI18n()
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Einstellungen">
+      <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={t('settings.title')}>
         <div className="modal-header">
-          <h2 className="modal-title">Einstellungen</h2>
-          <button className="modal-close" onClick={onClose} aria-label="Schließen">
+          <h2 className="modal-title">{t('settings.title')}</h2>
+          <button className="modal-close" onClick={onClose} aria-label={t('settings.close')}>
             ✕
           </button>
         </div>
 
         <div className="settings-list">
+          <div className="setting-block">
+            <span className="setting-label">{t('settings.language')}</span>
+            <LanguageSwitcher className="lang-switch-settings" />
+          </div>
+
           <Toggle
             checked={soundEnabled}
             onChange={onToggleSound}
-            label="Sound"
-            hint="Tick- und Reveal-Geräusche"
+            label={t('settings.sound')}
+            hint={t('settings.soundHint')}
           />
           <Toggle
             checked={surpriseMode}
             onChange={onToggleSurprise}
-            label="Überraschungs-Modus"
-            hint="Cover & Titel im Roulette verstecken – volle Überraschung"
+            label={t('settings.surprise')}
+            hint={t('settings.surpriseHint')}
           />
 
           <button className="setting-action" onClick={onReset} disabled={drawnCount === 0}>
             <UndoIcon className="setting-action-icon" />
             <span className="setting-text">
-              <span className="setting-label">Gezogene Songs zurücksetzen</span>
+              <span className="setting-label">{t('settings.reset')}</span>
               <span className="setting-hint">
                 {drawnCount > 0
-                  ? `${drawnCount} bereits gezogen – wieder in den Pool holen`
-                  : 'Aktuell sind keine Songs als gezogen markiert'}
+                  ? t('settings.resetHint', { n: drawnCount })
+                  : t('settings.resetHintNone')}
               </span>
             </span>
           </button>
@@ -90,19 +100,28 @@ export function SettingsPanel({
           <button className="setting-action" onClick={onManageSongs}>
             <TrashIcon className="setting-action-icon" />
             <span className="setting-text">
-              <span className="setting-label">Songs verwalten</span>
+              <span className="setting-label">{t('settings.manage')}</span>
               <span className="setting-hint">
-                Songs aus dem Pool entfernen
-                {excludedCount > 0 ? ` (${excludedCount} entfernt)` : ''}
+                {excludedCount > 0
+                  ? t('settings.manageHintCount', { n: excludedCount })
+                  : t('settings.manageHint')}
               </span>
+            </span>
+          </button>
+
+          <button className="setting-action" onClick={onChangePlatform}>
+            <MusicNoteIcon className="setting-action-icon" />
+            <span className="setting-text">
+              <span className="setting-label">{t('settings.changePlatform')}</span>
+              <span className="setting-hint">{t('settings.changePlatformHint')}</span>
             </span>
           </button>
 
           <button className="setting-action danger" onClick={onDisconnect}>
             <SpotifyIcon className="setting-action-icon" />
             <span className="setting-text">
-              <span className="setting-label">Spotify trennen</span>
-              <span className="setting-hint">Abmelden und Verbindung lösen</span>
+              <span className="setting-label">{t('settings.disconnect')}</span>
+              <span className="setting-hint">{t('settings.disconnectHint')}</span>
             </span>
           </button>
         </div>

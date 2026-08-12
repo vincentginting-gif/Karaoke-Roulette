@@ -1,7 +1,9 @@
+import { useI18n } from '../i18n/i18n'
 import { MicIcon } from './icons'
 
 /** Wird angezeigt, wenn keine Spotify Client-ID konfiguriert ist. */
 export function ConfigNeeded() {
+  const { t } = useI18n()
   return (
     <section className="stage stage-center fade-in">
       <div className="brand">
@@ -12,30 +14,22 @@ export function ConfigNeeded() {
       </div>
 
       <div className="connect-card">
-        <h2 className="connect-heading">Fast fertig – kurze Einrichtung</h2>
-        <p className="connect-text">
-          Es ist noch keine Spotify <strong>Client-ID</strong> hinterlegt. So
-          richtest du sie ein:
-        </p>
+        <h2 className="connect-heading">{t('config.heading')}</h2>
+        <p className="connect-text">{t('config.text')}</p>
         <ol className="setup-steps">
+          <li>{t('config.step1')}</li>
           <li>
-            Kopiere <code>.env.example</code> zu <code>.env</code>
-          </li>
-          <li>
-            Trage deine <code>VITE_SPOTIFY_CLIENT_ID</code> aus dem{' '}
+            {t('config.step2pre')}{' '}
             <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noreferrer">
               Spotify Developer Dashboard
             </a>{' '}
-            ein
+            {t('config.step2post')}
           </li>
-          <li>
-            Hinterlege die Redirect-URI <code>http://127.0.0.1:5173/callback</code> im
-            Dashboard
-          </li>
-          <li>Dev-Server neu starten</li>
+          <li>{t('config.step3')}</li>
+          <li>{t('config.step4')}</li>
         </ol>
         <p className="connect-text muted">
-          Details stehen in der <code>README.md</code>.
+          {t('config.details')} <code>README.md</code>.
         </p>
       </div>
     </section>

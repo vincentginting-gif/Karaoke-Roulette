@@ -44,7 +44,12 @@ import { SettingsPanel } from './components/SettingsPanel'
 import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
+import { PlatformPicker } from './components/PlatformPicker'
+import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
+import { useI18n } from './i18n/i18n'
+
+const PLATFORM_KEY = 'kr.platform'
 
 type View = 'home' | 'picker' | 'discover' | 'artist' | 'album' | 'roulette' | 'result' | 'manage'
 
@@ -115,9 +120,13 @@ const SURPRISE_KEY = 'kr.surprise.enabled'
 
 export function App() {
   const auth = useAuth()
+  const { t } = useI18n()
 
   const [view, setView] = useState<View>('home')
   const [error, setError] = useState<string | null>(null)
+
+  // Gewählte Plattform (nur Spotify aktiv); null => Plattform-Startscreen.
+  const [platform, setPlatform] = useState<string | null>(() => localStorage.getItem(PLATFORM_KEY))
 
   // Playlists (nur bei Bedarf geladen)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -162,6 +171,16 @@ export function App() {
 
   const showError = useCallback((msg: string) => setError(msg), [])
 
+  // Plattform-Auswahl (aktuell nur Spotify aktiv).
+  const selectPlatform = useCallback(() => {
+    localStorage.setItem(PLATFORM_KEY, 'spotify')
+    setPlatform('spotify')
+  }, [])
+  const changePlatform = useCallback(() => {
+    localStorage.removeItem(PLATFORM_KEY)
+    setPlatform(null)
+  }, [])
+
   // ── Fehler aus Auth-Hook übernehmen ──
   useEffect(() => {
     if (auth.error) setError(auth.error)
@@ -193,13 +212,10 @@ export function App() {
         if (cancelled) return
         setTracks(loaded)
         if (loaded.length === 0) {
-          let msg = 'Diese Playlist enthält keine abspielbaren Songs. Bitte eine andere wählen.'
-          if (pl.id.startsWith(ARTIST_PREFIX))
-            msg = 'Für diese Artists wurden keine Songs gefunden. Prüfe die Schreibweise.'
-          else if (pl.id.startsWith(ALBUM_PREFIX))
-            msg = 'Für diese Alben wurden keine Songs gefunden. Prüfe die Schreibweise.'
-          else if (pl.id.startsWith(DISCOVER_PREFIX))
-            msg = 'Keine Songs für dieses Genre gefunden. Versuch ein anderes Genre.'
+          let msg = t('error.emptyPlaylist')
+          if (pl.id.startsWith(ARTIST_PREFIX)) msg = t('error.emptyArtist')
+          else if (pl.id.startsWith(ALBUM_PREFIX)) msg = t('error.emptyAlbum')
+          else if (pl.id.startsWith(DISCOVER_PREFIX)) msg = t('error.emptyGenre')
           showError(msg)
         }
       } catch (e) {
@@ -332,11 +348,7 @@ export function App() {
   // ── Song ziehen (Roulette starten) ──
   const spin = useCallback(() => {
     if (pool.length === 0) {
-      showError(
-        tracks.length === 0
-          ? 'Es sind keine Songs geladen. Bitte eine Playlist mit Songs wählen.'
-          : 'Alle Songs wurden aus dem Pool entfernt. Hole unter „Songs verwalten“ welche zurück.',
-      )
+      showError(tracks.length === 0 ? t('error.noSongs') : t('error.allExcluded'))
       return
     }
     unlockAudio() // Audio nach User-Geste freischalten
@@ -354,9 +366,9 @@ export function App() {
       setStrip(buildStrip(pool, picked))
       setView('roulette')
     } catch {
-      showError('Song konnte nicht ausgewählt werden. Bitte erneut versuchen.')
+      showError(t('error.pickFailed'))
     }
-  }, [pool, tracks.length, drawnIds, lastWinnerId, activePlaylist, showError])
+  }, [pool, tracks.length, drawnIds, lastWinnerId, activePlaylist, showError, t])
 
   // ── Gezogene Songs zurücksetzen (wieder in den Pool) ──
   const resetDrawn = useCallback(() => {
@@ -406,6 +418,15 @@ export function App() {
 
   // ── Rendering ──────────────────────────────────────────────
 
+  // Erster Startscreen: Plattform-Auswahl.
+  if (!platform) {
+    return (
+      <Shell connected={false}>
+        <PlatformPicker onSelectSpotify={selectPlatform} />
+      </Shell>
+    )
+  }
+
   if (!isConfigured()) {
     return (
       <Shell connected={false}>
@@ -421,7 +442,7 @@ export function App() {
   let content: React.ReactNode
 
   if (auth.status === 'checking') {
-    content = <Spinner label="Verbindung wird geprüft…" />
+    content = <Spinner label={t('app.checking')} />
   } else if (auth.status === 'disconnected') {
     content = <ConnectSpotify onConnect={auth.connect} />
   } else if (view === 'discover') {
@@ -435,10 +456,10 @@ export function App() {
   } else if (view === 'artist') {
     content = (
       <ChipQueryPicker
-        title="Songs nach Artist"
-        subtitle="Füge Artists hinzu – gezogen werden zufällige Songs von ihnen."
-        itemNoun="Artist"
-        placeholder="Artist eingeben, z. B. Adele"
+        title={t('artist.title')}
+        subtitle={t('artist.subtitle')}
+        itemNoun={t('artist.noun')}
+        placeholder={t('artist.placeholder')}
         suggestions={ARTIST_SUGGESTIONS}
         initialItems={artistNames}
         initialLimit={artistLimit}
@@ -450,11 +471,11 @@ export function App() {
   } else if (view === 'album') {
     content = (
       <ChipQueryPicker
-        title="Songs nach Album"
-        subtitle="Füge Alben hinzu – gezogen werden zufällige Songs daraus. Interpret angeben, wenn der Albumname mehrdeutig ist."
-        itemNoun="Album"
-        placeholder="Album, z. B. Thriller"
-        secondaryPlaceholder="Interpret (optional)"
+        title={t('album.title')}
+        subtitle={t('album.subtitle')}
+        itemNoun={t('album.noun')}
+        placeholder={t('album.placeholder')}
+        secondaryPlaceholder={t('album.secondary')}
         suggestions={ALBUM_SUGGESTIONS}
         initialItems={albumNames}
         initialLimit={albumLimit}
@@ -507,7 +528,7 @@ export function App() {
   } else {
     // view === 'home'
     content = tracksLoading ? (
-      <Spinner label="Songs werden geladen…" />
+      <Spinner label={t('app.loadingSongs')} />
     ) : (
       <Home
         playlist={activePlaylist}
@@ -543,6 +564,10 @@ export function App() {
             setSettingsOpen(false)
             setView('manage')
           }}
+          onChangePlatform={() => {
+            setSettingsOpen(false)
+            changePlatform()
+          }}
           onClose={() => setSettingsOpen(false)}
           onDisconnect={() => {
             setSettingsOpen(false)
@@ -563,13 +588,20 @@ interface ShellProps {
 }
 
 function Shell({ children, connected, onOpenSettings }: ShellProps) {
+  const { t } = useI18n()
   return (
     <div className="app">
       <div className="bg-glow" aria-hidden="true" />
       <header className="app-header">
         <div className="app-header-actions">
+          <LanguageSwitcher className="lang-switch-header" />
           {connected && onOpenSettings && (
-            <button className="icon-btn" onClick={onOpenSettings} title="Einstellungen" aria-label="Einstellungen">
+            <button
+              className="icon-btn"
+              onClick={onOpenSettings}
+              title={t('settings.title')}
+              aria-label={t('settings.title')}
+            >
               <GearIcon className="icon-btn-svg" />
             </button>
           )}

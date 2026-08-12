@@ -1,4 +1,5 @@
 import type { Playlist } from '../spotify/types'
+import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
 import { DiceIcon, MicIcon, TrashIcon, UndoIcon } from './icons'
 
@@ -22,6 +23,7 @@ export function Home({
   remaining,
   total,
 }: HomeProps) {
+  const { t } = useI18n()
   const drawn = total - remaining
   return (
     <section className="stage stage-center fade-in">
@@ -30,45 +32,46 @@ export function Home({
           <MicIcon className="brand-mic-icon" />
         </div>
         <h1 className="brand-title">Karaoke Roulette</h1>
-        <p className="brand-subtitle">Lass den Zufall entscheiden, was du heute singst.</p>
+        <p className="brand-subtitle">{t('brand.subtitle')}</p>
       </div>
 
-      <button className="active-playlist" onClick={onChangePlaylist} title="Playlist wechseln">
+      <button className="active-playlist" onClick={onChangePlaylist} title={t('home.changePlaylist')}>
         <AlbumCover url={playlist.imageUrl} alt={playlist.name} className="active-playlist-cover" />
         <span className="active-playlist-meta">
-          <span className="active-playlist-label">Playlist</span>
+          <span className="active-playlist-label">{t('home.playlist')}</span>
           <span className="active-playlist-name">{playlist.name}</span>
         </span>
-        <span className="active-playlist-change">wechseln</span>
+        <span className="active-playlist-change">{t('home.change')}</span>
       </button>
 
       <button className="btn btn-primary btn-spin glow-strong" onClick={onSpin}>
         <DiceIcon className="btn-icon" />
-        Song auswählen
+        {t('home.spin')}
       </button>
 
       <div className="home-actions">
         <button className="btn btn-ghost" onClick={onChangePlaylist}>
-          🔀 Playlist wechseln
+          🔀 {t('home.changePlaylist')}
         </button>
         <button className="btn btn-ghost" onClick={onManageSongs}>
           <TrashIcon className="btn-icon" />
-          Songs verwalten
+          {t('home.manageSongs')}
         </button>
       </div>
 
       <p className="remaining-hint">
-        {total > 0 && (
-          <>
-            Noch {remaining} von {total} {total === 1 ? 'Song' : 'Songs'} ungezogen
-          </>
-        )}
+        {total > 0 &&
+          t('home.remaining', {
+            remaining,
+            total,
+            songs: t(total === 1 ? 'common.song' : 'common.songs'),
+          })}
       </p>
 
       {drawn > 0 && (
         <button className="btn btn-ghost btn-reset" onClick={onReset}>
           <UndoIcon className="btn-icon" />
-          Gezogene zurücksetzen ({drawn})
+          {t('home.reset', { n: drawn })}
         </button>
       )}
     </section>

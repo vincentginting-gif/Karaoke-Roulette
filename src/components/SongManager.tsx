@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { Playlist, Track } from '../spotify/types'
+import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
 import { ClockIcon, SearchIcon } from './icons'
 
@@ -13,14 +14,7 @@ interface SongManagerProps {
 
 type SortKey = 'playlist' | 'title' | 'artist' | 'album' | 'duration' | 'pool'
 
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'playlist', label: 'Playlist-Reihenfolge' },
-  { value: 'title', label: 'Titel A–Z' },
-  { value: 'artist', label: 'Artist A–Z' },
-  { value: 'album', label: 'Album A–Z' },
-  { value: 'duration', label: 'Dauer (kurz → lang)' },
-  { value: 'pool', label: 'Entfernte zuerst' },
-]
+const SORT_KEYS: SortKey[] = ['playlist', 'title', 'artist', 'album', 'duration', 'pool']
 
 /** mm:ss aus Millisekunden. */
 function formatDuration(ms: number): string {
@@ -31,14 +25,14 @@ function formatDuration(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-/** Gesamtdauer der Playlist menschenlesbar. */
-function formatTotal(tracks: Track[]): string {
+/** Gesamtdauer der Playlist menschenlesbar (lokalisierte Einheiten). */
+function formatTotal(tracks: Track[], unitMin: string, unitHour: string): string {
   const ms = tracks.reduce((sum, t) => sum + (t.durationMs || 0), 0)
   if (!ms) return ''
   const min = Math.round(ms / 60000)
-  if (min < 60) return `${min} Min.`
+  if (min < 60) return `${min} ${unitMin}`
   const h = Math.floor(min / 60)
-  return `${h} Std. ${min % 60} Min.`
+  return `${h} ${unitHour} ${min % 60} ${unitMin}`
 }
 
 /**
@@ -54,8 +48,9 @@ export function SongManager({
   onToggleExclude,
   onBack,
 }: SongManagerProps) {
+  const { t } = useI18n()
   const activeCount = tracks.length - excludedIds.size
-  const totalLabel = formatTotal(tracks)
+  const totalLabel = formatTotal(tracks, t('sm.min'), t('sm.hour'))
 
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('playlist')
@@ -101,7 +96,7 @@ export function SongManager({
   return (
     <section className="stage sp-view fade-in">
       <button className="btn btn-ghost sp-back" onClick={onBack}>
-        ← Fertig
+        ← {t('common.done')}
       </button>
 
       <header className="sp-header">
@@ -109,13 +104,13 @@ export function SongManager({
           <AlbumCover url={playlist.imageUrl} alt={playlist.name} className="sp-cover" />
         </div>
         <div className="sp-header-info">
-          <span className="sp-kicker">Playlist</span>
+          <span className="sp-kicker">{t('home.playlist')}</span>
           <h1 className="sp-title">{playlist.name}</h1>
           <p className="sp-meta">
             <span className="sp-owner">{playlist.ownerName}</span>
             <span className="sp-dot">•</span>
             <span>
-              {tracks.length} {tracks.length === 1 ? 'Song' : 'Songs'}
+              {tracks.length} {t(tracks.length === 1 ? 'common.song' : 'common.songs')}
             </span>
             {totalLabel && (
               <>
@@ -125,16 +120,13 @@ export function SongManager({
             )}
           </p>
           <p className="sp-pool">
-            <span className="sp-pool-dot" /> {activeCount} im Pool
-            {excludedIds.size > 0 && ` · ${excludedIds.size} entfernt`}
+            <span className="sp-pool-dot" /> {t('sm.inPool', { n: activeCount })}
+            {excludedIds.size > 0 && ` · ${t('sm.removed', { n: excludedIds.size })}`}
           </p>
         </div>
       </header>
 
-      <p className="sp-hint">
-        Tippe auf einen Song, um ihn aus dem Pool zu nehmen (oder zurückzuholen). Entfernte
-        Songs werden beim Roulette nicht mehr gezogen – deine Spotify-Playlist bleibt unberührt.
-      </p>
+      <p className="sp-hint">{t('sm.hint')}</p>
 
       <div className="sp-toolbar">
         <div className="sp-search">
@@ -143,22 +135,22 @@ export function SongManager({
             className="sp-search-input"
             type="search"
             inputMode="search"
-            placeholder="In dieser Playlist suchen…"
+            placeholder={t('sm.search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Songs durchsuchen"
+            aria-label={t('sm.search')}
           />
         </div>
         <label className="sp-sort">
-          <span className="sp-sort-label">Sortieren</span>
+          <span className="sp-sort-label">{t('sm.sort')}</span>
           <select
             className="sp-sort-select"
             value={sortKey}
             onChange={(e) => setSortKey(e.target.value as SortKey)}
           >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
+            {SORT_KEYS.map((k) => (
+              <option key={k} value={k}>
+                {t(`sm.sort.${k}`)}
               </option>
             ))}
           </select>
@@ -168,46 +160,46 @@ export function SongManager({
       <div className="sp-list" role="list">
         <div className="sp-row sp-row-head" aria-hidden="true">
           <span className="sp-col-idx">#</span>
-          <span className="sp-col-title">Titel</span>
-          <span className="sp-col-album">Album</span>
+          <span className="sp-col-title">{t('sm.colTitle')}</span>
+          <span className="sp-col-album">{t('sm.colAlbum')}</span>
           <span className="sp-col-dur">
             <ClockIcon className="sp-clock" />
           </span>
           <span className="sp-col-act" />
         </div>
 
-        {visible.map((t, i) => {
-          const excluded = excludedIds.has(t.id)
+        {visible.map((track, i) => {
+          const excluded = excludedIds.has(track.id)
           return (
             <div
-              key={t.id}
+              key={track.id}
               role="listitem"
               className={`sp-row sp-track${excluded ? ' sp-track-excluded' : ''}`}
-              onClick={() => onToggleExclude(t.id)}
+              onClick={() => onToggleExclude(track.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
-                  onToggleExclude(t.id)
+                  onToggleExclude(track.id)
                 }
               }}
               tabIndex={0}
-              title={excluded ? 'Zurück in den Pool holen' : 'Aus dem Pool entfernen'}
+              title={excluded ? t('sm.restoreTitle') : t('sm.removeTitle')}
             >
               <span className="sp-col-idx">
                 <span className="sp-idx-num">{i + 1}</span>
               </span>
               <span className="sp-col-title sp-title-cell">
-                <AlbumCover url={t.coverUrl} alt={t.title} className="sp-track-cover" />
+                <AlbumCover url={track.coverUrl} alt={track.title} className="sp-track-cover" />
                 <span className="sp-track-text">
-                  <span className="sp-track-name">{t.title}</span>
-                  <span className="sp-track-artist">{t.artist}</span>
+                  <span className="sp-track-name">{track.title}</span>
+                  <span className="sp-track-artist">{track.artist}</span>
                 </span>
               </span>
-              <span className="sp-col-album">{t.album || '–'}</span>
-              <span className="sp-col-dur">{formatDuration(t.durationMs)}</span>
+              <span className="sp-col-album">{track.album || '–'}</span>
+              <span className="sp-col-dur">{formatDuration(track.durationMs)}</span>
               <span className="sp-col-act">
                 <span className={`sp-action${excluded ? ' restore' : ''}`}>
-                  {excluded ? 'Zurückholen' : 'Entfernen'}
+                  {excluded ? t('sm.restore') : t('sm.remove')}
                 </span>
               </span>
             </div>
@@ -216,9 +208,7 @@ export function SongManager({
 
         {visible.length === 0 && (
           <p className="sp-empty">
-            {query.trim()
-              ? `Keine Treffer für „${query.trim()}“.`
-              : 'Diese Playlist enthält keine Songs.'}
+            {query.trim() ? t('sm.noResults', { q: query.trim() }) : t('sm.emptyPlaylist')}
           </p>
         )}
       </div>
