@@ -18,16 +18,34 @@ export interface ParsedLine {
 
 export type MatchStatus = 'high' | 'medium' | 'low' | 'none'
 
+/** Ein bewerteter Kandidat inkl. Score-Aufschlüsselung (für die Diagnose). */
+export interface ScoredCandidate {
+  track: Track
+  score: number
+  titleSim: number
+  artistSim: number
+}
+
+/** Diagnose-Daten: was wurde gesucht und was kam zurück? */
+export interface MatchDebug {
+  /** Jede abgesetzte Suchanfrage mit Trefferzahl. */
+  queries: { q: string; count: number }[]
+  /** Summe der (einzigartigen) Roh-Kandidaten über alle Anfragen. */
+  totalCandidates: number
+}
+
 /** Abgleich-Ergebnis eines Eintrags gegen den Spotify-Katalog. */
 export interface MatchResult {
   input: ParsedLine
   /** Alle Kandidaten (nach Konfidenz sortiert), inkl. Score. */
-  candidates: { track: Track; score: number }[]
+  candidates: ScoredCandidate[]
   /** Index des aktuell gewählten Kandidaten (-1 = keiner). */
   chosenIndex: number
   status: MatchStatus
   /** Wird der Eintrag in die neue Playlist übernommen? */
   include: boolean
+  /** Diagnose: Suchanfragen + Trefferzahlen. */
+  debug: MatchDebug
 }
 
 // ── Parsing ──────────────────────────────────────────────────
@@ -116,17 +134,19 @@ function dice(a: string, b: string): number {
   return (2 * inter) / total
 }
 
-/** Score 0..1: 65% Titel-, 35% Interpret-Ähnlichkeit (nur Titel, falls kein Artist). */
-function scoreCandidate(input: ParsedLine, cand: Track): number {
+/** Score 0..1 mit Aufschlüsselung: 65% Titel-, 35% Interpret-Ähnlichkeit. */
+function scoreBreakdown(input: ParsedLine, cand: Track): { titleSim: number; artistSim: number; score: number } {
   const titleSim = dice(norm(input.title), norm(cand.title))
-  if (!input.artist) return titleSim
+  if (!input.artist) return { titleSim, artistSim: 1, score: titleSim }
 
   const inA = norm(input.artist)
   const candA = norm(cand.artist)
   let artistSim = dice(inA, candA)
   // "includes"-Bonus: Interpret taucht im (Mehr-)Artist-Feld auf.
-  if (candA.includes(inA) || inA.includes(candA)) artistSim = Math.max(artistSim, 0.9)
-  return 0.65 * titleSim + 0.35 * artistSim
+  if (inA && candA && (candA.includes(inA) || inA.includes(candA))) {
+    artistSim = Math.max(artistSim, 0.9)
+  }
+  return { titleSim, artistSim, score: 0.65 * titleSim + 0.35 * artistSim }
 }
 
 function classify(score: number, hasCandidate: boolean): MatchStatus {
@@ -138,29 +158,49 @@ function classify(score: number, hasCandidate: boolean): MatchStatus {
 
 // ── Ein einzelner Eintrag ────────────────────────────────────
 
-function buildQueries(input: ParsedLine): string[] {
-  const q: string[] = []
-  if (input.artist) {
-    q.push(`track:"${input.title}" artist:"${input.artist}"`)
-    q.push(`${input.title} ${input.artist}`)
-  } else {
-    q.push(input.title)
-  }
-  return q
+/** Anführungszeichen im Feldfilter entschärfen (sonst bricht die Query). */
+function q(s: string): string {
+  return `"${s.replace(/["']/g, ' ').trim()}"`
 }
 
-/** Sucht + bewertet einen Eintrag; liefert das MatchResult. */
+/**
+ * Baut mehrere Suchanfragen – von robust (Freitext) bis präzise (Feldfilter).
+ * Freitext zuerst, weil Feldfilter im Development Mode und bei Sonderzeichen
+ * oft 0 Treffer liefern.
+ */
+function buildQueries(input: ParsedLine): string[] {
+  const title = input.title.trim()
+  const artist = input.artist.trim()
+  if (artist) {
+    return [
+      `${title} ${artist}`, // Freitext (robust, sprachübergreifend)
+      `track:${q(title)} artist:${q(artist)}`, // präzise
+      title, // Titel-only als letzter Fallback
+    ]
+  }
+  return [title]
+}
+
+/** Sucht + bewertet einen Eintrag; liefert das MatchResult inkl. Diagnose. */
 export async function matchOne(input: ParsedLine): Promise<MatchResult> {
   const byId = new Map<string, Track>()
-  for (const query of buildQueries(input)) {
+  const queries: { q: string; count: number }[] = []
+
+  const queryList = buildQueries(input)
+  for (let i = 0; i < queryList.length; i++) {
+    const query = queryList[i]
     const found = await searchCandidates(query)
+    queries.push({ q: query, count: found.length })
     for (const tr of found) if (!byId.has(tr.id)) byId.set(tr.id, tr)
-    // Genug gute Kandidaten? Dann nicht weiter suchen.
-    if (byId.size >= 5) break
+    // Titel-only (letzte Anfrage) nur nötig, wenn bisher kaum Kandidaten.
+    if (i === queryList.length - 2 && byId.size >= 3) break
   }
 
-  const scored = [...byId.values()]
-    .map((track) => ({ track, score: scoreCandidate(input, track) }))
+  const scored: ScoredCandidate[] = [...byId.values()]
+    .map((track) => {
+      const b = scoreBreakdown(input, track)
+      return { track, score: b.score, titleSim: b.titleSim, artistSim: b.artistSim }
+    })
     .sort((x, y) => y.score - x.score)
 
   const best = scored[0]
@@ -172,6 +212,7 @@ export async function matchOne(input: ParsedLine): Promise<MatchResult> {
     status,
     // Niedrige/keine Treffer standardmäßig NICHT übernehmen (Nutzer prüft).
     include: status === 'high' || status === 'medium',
+    debug: { queries, totalCandidates: byId.size },
   }
 }
 

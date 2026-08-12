@@ -206,6 +206,23 @@ export const translations: Record<string, Entry> = {
   'convert.createFailed': { de: 'Playlist konnte nicht erstellt werden.', en: 'Could not create the playlist.', ko: '플레이리스트를 만들 수 없습니다.' },
   'convert.noUser': { de: 'Spotify-Konto nicht erkannt. Bitte neu verbinden.', en: 'Spotify account not detected. Please reconnect.', ko: 'Spotify 계정을 확인할 수 없습니다. 다시 연결하세요.' },
 
+  // ── Konverter – Diagnose ──
+  'convert.debug.show': { de: 'Diagnose', en: 'Diagnostics', ko: '진단' },
+  'convert.debug.queries': { de: 'Suchanfragen an Spotify', en: 'Search queries to Spotify', ko: 'Spotify 검색 쿼리' },
+  'convert.debug.hits': { de: '{n} Treffer', en: '{n} hits', ko: '{n}개 결과' },
+  'convert.debug.zeroHits': { de: '0 Treffer', en: '0 hits', ko: '0개 결과' },
+  'convert.debug.scores': { de: 'Bewertete Kandidaten (Titel / Interpret / gesamt)', en: 'Scored candidates (title / artist / total)', ko: '평가된 후보 (제목 / 아티스트 / 합계)' },
+  'convert.debug.noCandidates': {
+    de: 'Spotify hat für keine Suchanfrage Ergebnisse geliefert – daher 0 %. Der Song existiert vermutlich, aber die Katalog-Suche ist eingeschränkt (siehe Hinweis oben).',
+    en: 'Spotify returned no results for any query – hence 0%. The song likely exists, but catalog search is restricted (see note above).',
+    ko: '어떤 쿼리에도 Spotify가 결과를 반환하지 않아 0%입니다. 곡은 존재하지만 카탈로그 검색이 제한되어 있습니다 (위 안내 참조).',
+  },
+  'convert.searchWarning': {
+    de: 'Bei {n} von {total} Songs liefert die Spotify-Katalog-Suche keine Treffer. Das ist fast immer die Development-Mode-Einschränkung: Für die volle Suche muss deine Spotify-App den „Extended Quota Mode“ haben (im Developer-Dashboard beantragen). Die perfekt geschriebenen Songs sind also nicht das Problem – die Suche selbst wird gedrosselt.',
+    en: 'For {n} of {total} songs Spotify’s catalog search returns nothing. This is almost always the Development Mode restriction: full search needs your Spotify app to have “Extended Quota Mode” (request it in the developer dashboard). The correctly spelled songs aren’t the problem – search itself is throttled.',
+    ko: '{total}곡 중 {n}곡에 대해 Spotify 카탈로그 검색이 아무것도 반환하지 않습니다. 이는 거의 항상 Development Mode 제한입니다: 전체 검색을 하려면 Spotify 앱에 “Extended Quota Mode”가 필요합니다 (개발자 대시보드에서 요청). 올바르게 입력된 곡이 문제가 아니라 검색 자체가 제한됩니다.',
+  },
+
   'picker.loading': { de: 'Playlists werden geladen…', en: 'Loading playlists…', ko: '플레이리스트 불러오는 중…' },
   'picker.empty': {
     de: 'Es wurden keine Playlists in deinem Spotify-Konto gefunden.',

@@ -33,10 +33,13 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [created, setCreated] = useState<{ pl: CreatedPlaylist; count: number } | null>(null)
+  const [showDebug, setShowDebug] = useState(false)
 
   // Live-Vorschau: wie viele Zeilen werden erkannt?
   const parsed = useMemo(() => parseList(text, artistFirst), [text, artistFirst])
   const includedCount = results.filter((r) => r.include && r.chosenIndex >= 0).length
+  // Wie viele Songs bekamen GAR keine Kandidaten von Spotify?
+  const zeroHitCount = results.filter((r) => r.debug.totalCandidates === 0).length
 
   // ── Suchen / Abgleichen ──
   const startMatching = async () => {
@@ -194,19 +197,40 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
 
       {(phase === 'review' || phase === 'creating') && (
         <div className="conv-review">
+          {zeroHitCount > 0 && (
+            <div className="conv-warn">
+              <span className="conv-warn-icon" aria-hidden="true">
+                ⚠️
+              </span>
+              <p className="conv-warn-text">
+                {t('convert.searchWarning', { n: zeroHitCount, total: results.length })}
+              </p>
+            </div>
+          )}
+
           <div className="conv-review-head">
             <span className="conv-included">
               {t('convert.included', { n: includedCount, total: results.length })}
             </span>
-            <button
-              className="btn btn-primary"
-              onClick={create}
-              disabled={includedCount === 0 || phase === 'creating'}
-            >
-              {phase === 'creating'
-                ? t('convert.creating')
-                : t('convert.create', { n: includedCount })}
-            </button>
+            <div className="conv-head-right">
+              <label className="conv-debug-toggle">
+                <input
+                  type="checkbox"
+                  checked={showDebug}
+                  onChange={() => setShowDebug((v) => !v)}
+                />
+                🔍 {t('convert.debug.show')}
+              </label>
+              <button
+                className="btn btn-primary"
+                onClick={create}
+                disabled={includedCount === 0 || phase === 'creating'}
+              >
+                {phase === 'creating'
+                  ? t('convert.creating')
+                  : t('convert.create', { n: includedCount })}
+              </button>
+            </div>
           </div>
 
           <ul className="conv-list">
@@ -281,6 +305,44 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
                         </li>
                       ))}
                     </ul>
+                  )}
+
+                  {showDebug && (
+                    <div className="conv-debug">
+                      <div className="conv-debug-sect">{t('convert.debug.queries')}</div>
+                      <ul className="conv-debug-queries">
+                        {r.debug.queries.map((qq, qi) => (
+                          <li key={qi}>
+                            <code>{qq.q}</code>
+                            <span className={qq.count === 0 ? 'conv-debug-zero' : 'conv-debug-hits'}>
+                              {qq.count === 0
+                                ? t('convert.debug.zeroHits')
+                                : t('convert.debug.hits', { n: qq.count })}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      {r.debug.totalCandidates === 0 ? (
+                        <p className="conv-debug-note">{t('convert.debug.noCandidates')}</p>
+                      ) : (
+                        <>
+                          <div className="conv-debug-sect">{t('convert.debug.scores')}</div>
+                          <ul className="conv-debug-scores">
+                            {r.candidates.slice(0, 6).map((c) => (
+                              <li key={c.track.id}>
+                                <span className="conv-debug-name">
+                                  {c.track.title} — {c.track.artist}
+                                </span>
+                                <span className="conv-debug-nums">
+                                  {Math.round(c.titleSim * 100)}% / {Math.round(c.artistSim * 100)}% /{' '}
+                                  <strong>{Math.round(c.score * 100)}%</strong>
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                    </div>
                   )}
                 </li>
               )

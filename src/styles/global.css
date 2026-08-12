@@ -2131,3 +2131,114 @@ code {
   width: 100%;
   margin-top: 8px;
 }
+
+/* Konverter – Warnbanner & Diagnose */
+.conv-warn {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(228, 174, 57, 0.4);
+  background: rgba(228, 174, 57, 0.1);
+}
+.conv-warn-icon {
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+.conv-warn-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+.conv-head-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.conv-debug-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.conv-debug-toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.conv-debug {
+  flex-basis: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.conv-debug-sect {
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.72rem;
+  margin: 4px 0 6px;
+}
+.conv-debug-queries,
+.conv-debug-scores {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.conv-debug-queries li,
+.conv-debug-scores li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.conv-debug-queries code {
+  background: transparent;
+  color: var(--text-dim);
+  padding: 0;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+.conv-debug-hits {
+  flex: 0 0 auto;
+  color: #4ade80;
+  font-weight: 600;
+}
+.conv-debug-zero {
+  flex: 0 0 auto;
+  color: #f87171;
+  font-weight: 600;
+}
+.conv-debug-note {
+  margin: 0;
+  color: #fbbf24;
+  line-height: 1.5;
+}
+.conv-debug-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.conv-debug-nums {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+.conv-debug-nums strong {
+  color: var(--text);
+}
