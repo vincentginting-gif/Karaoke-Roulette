@@ -24,6 +24,8 @@ export interface ScoredCandidate {
   score: number
   titleSim: number
   artistSim: number
+  /** true, wenn Titel/Interpret vertauscht besser passten (auto-korrigiert). */
+  swapped: boolean
 }
 
 /** Diagnose-Daten: was wurde gesucht und was kam zurück? */
@@ -134,12 +136,10 @@ function dice(a: string, b: string): number {
   return (2 * inter) / total
 }
 
-/** Score 0..1 mit Aufschlüsselung: 65% Titel-, 35% Interpret-Ähnlichkeit. */
-function scoreBreakdown(input: ParsedLine, cand: Track): { titleSim: number; artistSim: number; score: number } {
-  const titleSim = dice(norm(input.title), norm(cand.title))
-  if (!input.artist) return { titleSim, artistSim: 1, score: titleSim }
-
-  const inA = norm(input.artist)
+/** Ähnlichkeit für eine feste Deutung (welcher Text = Titel, welcher = Interpret). */
+function simPair(inTitle: string, inArtist: string, cand: Track): { titleSim: number; artistSim: number; score: number } {
+  const titleSim = dice(norm(inTitle), norm(cand.title))
+  const inA = norm(inArtist)
   const candA = norm(cand.artist)
   let artistSim = dice(inA, candA)
   // "includes"-Bonus: Interpret taucht im (Mehr-)Artist-Feld auf.
@@ -147,6 +147,24 @@ function scoreBreakdown(input: ParsedLine, cand: Track): { titleSim: number; art
     artistSim = Math.max(artistSim, 0.9)
   }
   return { titleSim, artistSim, score: 0.65 * titleSim + 0.35 * artistSim }
+}
+
+/**
+ * Score 0..1 mit Aufschlüsselung. REIHENFOLGE-UNABHÄNGIG: bewertet den
+ * Kandidaten sowohl als "Titel – Interpret" als auch vertauscht und nimmt
+ * die bessere Deutung. So korrigiert sich ein falsch gesetzter Reihenfolge-
+ * Umschalter automatisch (ohne zusätzliche Suchanfrage).
+ */
+function scoreBreakdown(input: ParsedLine, cand: Track): { titleSim: number; artistSim: number; score: number; swapped: boolean } {
+  if (!input.artist) {
+    const titleSim = dice(norm(input.title), norm(cand.title))
+    return { titleSim, artistSim: 1, score: titleSim, swapped: false }
+  }
+  const normal = simPair(input.title, input.artist, cand)
+  const swapped = simPair(input.artist, input.title, cand)
+  return swapped.score > normal.score
+    ? { ...swapped, swapped: true }
+    : { ...normal, swapped: false }
 }
 
 function classify(score: number, hasCandidate: boolean): MatchStatus {
@@ -199,7 +217,7 @@ export async function matchOne(input: ParsedLine): Promise<MatchResult> {
   const scored: ScoredCandidate[] = [...byId.values()]
     .map((track) => {
       const b = scoreBreakdown(input, track)
-      return { track, score: b.score, titleSim: b.titleSim, artistSim: b.artistSim }
+      return { track, score: b.score, titleSim: b.titleSim, artistSim: b.artistSim, swapped: b.swapped }
     })
     .sort((x, y) => y.score - x.score)
 

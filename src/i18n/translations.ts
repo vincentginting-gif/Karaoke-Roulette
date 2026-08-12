@@ -188,6 +188,11 @@ export const translations: Record<string, Entry> = {
   'convert.confidence.low': { de: 'Unsicher', en: 'Weak', ko: '불확실' },
   'convert.confidence.none': { de: 'Kein Treffer', en: 'No match', ko: '없음' },
   'convert.noMatch': { de: 'Kein Treffer auf Spotify', en: 'No match on Spotify', ko: 'Spotify에 일치 항목 없음' },
+  'convert.swapped': {
+    de: 'Reihenfolge automatisch korrigiert (Titel/Interpret vertauscht)',
+    en: 'Order auto-corrected (title/artist swapped)',
+    ko: '순서 자동 교정됨 (제목/아티스트 바뀜)',
+  },
   'convert.otherMatches': { de: 'Andere Treffer', en: 'Other matches', ko: '다른 결과' },
   'convert.create': { de: 'Playlist erstellen ({n})', en: 'Create playlist ({n})', ko: '플레이리스트 만들기 ({n})' },
   'convert.creating': { de: 'Erstelle Playlist…', en: 'Creating playlist…', ko: '플레이리스트 생성 중…' },

@@ -265,7 +265,15 @@ export function PlaylistConverter({ userId, onError, onCancel, onUsePlaylist }: 
                         className="conv-match-cover"
                       />
                       <div className="conv-match-text">
-                        <span className="conv-match-title">{chosen.track.title}</span>
+                        <span className="conv-match-title">
+                          {chosen.track.title}
+                          {chosen.swapped && (
+                            <span className="conv-swap" title={t('convert.swapped')}>
+                              {' '}
+                              ↔
+                            </span>
+                          )}
+                        </span>
                         <span className="conv-match-artist">{chosen.track.artist}</span>
                       </div>
                     </div>
