@@ -94,13 +94,17 @@ export async function prefetchCovers(
   items: { id: string; title: string; artist: string }[],
   onCover: (id: string, url: string) => void,
   concurrency = 5,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<void> {
   let next = 0
+  let done = 0
   async function worker() {
     while (next < items.length) {
       const it = items[next++]
       const url = await fetchCover(it.title, it.artist)
       if (url) onCover(it.id, url)
+      done++
+      onProgress?.(done, items.length)
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, () => worker()))

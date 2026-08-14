@@ -184,6 +184,9 @@ export function App() {
 
   // Nachgeladene Album-Cover (iTunes) für Offline-Songs: trackId -> Bild-URL.
   const [coverMap, setCoverMap] = useState<Record<string, string>>({})
+  // „Cover werden geladen…"-Moment vor dem ersten Spin (nur Offline-Start).
+  const [preparingCovers, setPreparingCovers] = useState(false)
+  const [coverProgress, setCoverProgress] = useState({ loaded: 0, total: 0 })
 
   // Eigene Spotify-User-ID (für Besitz-Erkennung der Playlists)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
@@ -233,17 +236,29 @@ export function App() {
     const needing = tracks.filter(
       (t) => t.id.startsWith('offline-') && !t.coverUrl && !coverMap[t.id],
     )
-    if (needing.length === 0) return
+    if (needing.length === 0) {
+      setPreparingCovers(false)
+      return
+    }
     let cancelled = false
+    setCoverProgress({ loaded: 0, total: needing.length })
+    // Sicherheitsnetz: Ladeschirm nie länger als 12s blockieren.
+    const safety = window.setTimeout(() => setPreparingCovers(false), 12000)
     void prefetchCovers(
       needing.map((t) => ({ id: t.id, title: t.title, artist: t.artist })),
       (id, url) => {
         if (!cancelled) setCoverMap((prev) => (prev[id] ? prev : { ...prev, [id]: url }))
       },
       4,
-    )
+      (done, total) => {
+        if (!cancelled) setCoverProgress({ loaded: done, total })
+      },
+    ).finally(() => {
+      if (!cancelled) setPreparingCovers(false)
+    })
     return () => {
       cancelled = true
+      window.clearTimeout(safety)
     }
     // coverMap bewusst NICHT in den Deps: sonst Neustart bei jedem Cover.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -482,8 +497,10 @@ export function App() {
     setDrawnIds(new Set())
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
+    // „Cover werden geladen…"-Moment zeigen, bis der Effekt (unten) fertig ist.
+    setCoverProgress({ loaded: 0, total: trks.length })
+    setPreparingCovers(true)
     setView('home')
-    // Cover werden vom Effekt unten (auf tracks) im Hintergrund nachgeladen.
   }, [])
 
   // ── Gespeicherte JSON-Datei importieren (aus dem Picker) ──
@@ -752,6 +769,27 @@ export function App() {
   } else if (view === 'result' && winner) {
     content = (
       <Result track={winner} onAgain={spin} onChangePlaylist={openPicker} />
+    )
+  } else if (preparingCovers) {
+    // Kurzer „Cover werden geladen…"-Moment vor dem ersten Spin.
+    content = (
+      <section className="stage stage-center fade-in cover-loading">
+        <p className="cover-loading-title">🎵 {t('offline.loadingCovers')}</p>
+        <div className="conv-progress-bar cover-loading-bar">
+          <div
+            className="conv-progress-fill"
+            style={{
+              width: `${coverProgress.total ? (coverProgress.loaded / coverProgress.total) * 100 : 0}%`,
+            }}
+          />
+        </div>
+        <p className="cover-loading-count">
+          {coverProgress.loaded}/{coverProgress.total}
+        </p>
+        <button className="btn btn-ghost" onClick={() => setPreparingCovers(false)}>
+          {t('offline.skipCovers')}
+        </button>
+      </section>
     )
   } else {
     // view === 'home'

@@ -222,6 +222,8 @@ export const translations: Record<string, Entry> = {
   'offline.namePlaceholder': { de: 'Karaoke-Party', en: 'Karaoke party', ko: '노래방 파티' },
   'offline.defaultName': { de: 'Karaoke-Party', en: 'Karaoke party', ko: '노래방 파티' },
   'offline.start': { de: 'Los spinnen', en: 'Start spinning', ko: '돌리기 시작' },
+  'offline.loadingCovers': { de: 'Cover werden geladen…', en: 'Loading covers…', ko: '커버 불러오는 중…' },
+  'offline.skipCovers': { de: 'Trotzdem spinnen', en: 'Spin anyway', ko: '그냥 돌리기' },
   'offline.presetsIntro': {
     de: 'Keine Idee? Fertige Listen laden (anhängbar):',
     en: 'No idea? Load ready-made lists (stackable):',
