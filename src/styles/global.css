@@ -85,44 +85,17 @@ code {
   isolation: isolate;
 }
 
-/* Ambienter Hintergrund-Glow (atmet leicht -> lebendig) */
+/* Ambienter Hintergrund-Glow (statisch – ressourcenschonend) */
 .bg-glow {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  overflow: hidden;
   background:
     radial-gradient(60% 45% at 20% 12%, rgba(34, 211, 238, 0.16), transparent 70%),
     radial-gradient(55% 45% at 85% 20%, rgba(244, 63, 142, 0.16), transparent 70%),
     radial-gradient(80% 60% at 50% 110%, rgba(124, 92, 255, 0.12), transparent 70%);
   filter: saturate(1.1);
-  animation: bg-breathe 18s ease-in-out infinite alternate;
-}
-/* Langsam rotierende Aurora für mehr Tiefe/Bewegung */
-.bg-glow::before {
-  content: '';
-  position: absolute;
-  inset: -30%;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(34, 211, 238, 0.1) 60deg,
-    transparent 140deg,
-    rgba(244, 63, 142, 0.1) 220deg,
-    transparent 300deg,
-    rgba(124, 92, 255, 0.08) 340deg,
-    transparent 360deg
-  );
-  filter: blur(70px);
-  animation: bg-rotate 46s linear infinite;
-}
-@keyframes bg-breathe {
-  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.85; }
-  100% { transform: translate3d(-2%, -1.5%, 0) scale(1.08); opacity: 1; }
-}
-@keyframes bg-rotate {
-  to { transform: rotate(360deg); }
 }
 
 .app-header {
@@ -213,30 +186,20 @@ code {
   border-radius: 24px;
   background: linear-gradient(145deg, rgba(34, 211, 238, 0.18), rgba(244, 63, 142, 0.18));
   border: 1px solid var(--border-strong);
-  animation: mic-float 4.5s ease-in-out infinite;
 }
-/* Pulsierender Lichthof hinter dem Mikro */
+/* Statischer Lichthof hinter dem Logo/Mikro (keine Animation) */
 .brand-mic-halo {
   position: absolute;
-  inset: -14px;
+  inset: -12px;
   border-radius: 30px;
-  background: radial-gradient(closest-side, rgba(34, 211, 238, 0.45), rgba(244, 63, 142, 0.28), transparent 75%);
-  filter: blur(14px);
+  background: radial-gradient(closest-side, rgba(34, 211, 238, 0.32), rgba(244, 63, 142, 0.2), transparent 75%);
+  filter: blur(16px);
   z-index: -1;
-  animation: mic-halo 3.2s ease-in-out infinite;
 }
 .brand-mic-icon {
   width: 40px;
   height: 40px;
   color: var(--text);
-}
-@keyframes mic-float {
-  0%, 100% { transform: translateY(0) rotate(-2deg); }
-  50% { transform: translateY(-8px) rotate(2deg); }
-}
-@keyframes mic-halo {
-  0%, 100% { opacity: 0.55; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.1); }
 }
 .brand-title {
   margin: 0;
@@ -244,48 +207,16 @@ code {
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.02;
-  background: linear-gradient(100deg, #fff 0%, var(--accent) 35%, var(--accent-2) 65%, #fff 100%);
-  background-size: 220% auto;
+  background: linear-gradient(100deg, #fff 10%, var(--accent) 55%, var(--accent-2) 95%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: title-shine 7s linear infinite;
-}
-@keyframes title-shine {
-  to { background-position: 220% center; }
 }
 .brand-subtitle {
   margin: 0;
   color: var(--text-dim);
   font-size: clamp(1rem, 2.4vw, 1.15rem);
   max-width: 30ch;
-}
-/* Equalizer-Akzent unter dem Titel (Musik = Bewegung) */
-.brand-eq {
-  display: flex;
-  align-items: flex-end;
-  gap: 5px;
-  height: 26px;
-  margin-top: 2px;
-}
-.brand-eq span {
-  width: 5px;
-  height: 100%;
-  border-radius: 3px;
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  transform-origin: bottom;
-  animation: eq-bounce 1.1s ease-in-out infinite;
-}
-.brand-eq span:nth-child(1) { animation-delay: 0s; }
-.brand-eq span:nth-child(2) { animation-delay: 0.14s; }
-.brand-eq span:nth-child(3) { animation-delay: 0.28s; }
-.brand-eq span:nth-child(4) { animation-delay: 0.42s; }
-.brand-eq span:nth-child(5) { animation-delay: 0.56s; }
-.brand-eq span:nth-child(6) { animation-delay: 0.7s; }
-.brand-eq span:nth-child(7) { animation-delay: 0.84s; }
-@keyframes eq-bounce {
-  0%, 100% { transform: scaleY(0.3); opacity: 0.7; }
-  50% { transform: scaleY(1); opacity: 1; }
 }
 
 .glow {
@@ -2586,10 +2517,18 @@ code {
   height: 34px;
   color: var(--text);
   filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.7));
-  animation: mic-halo 1.6s ease-in-out infinite;
+  animation: loader-pulse 1.6s ease-in-out infinite;
 }
 @keyframes loader-spin {
   to { transform: rotate(360deg); }
+}
+@keyframes loader-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+@keyframes eq-bounce {
+  0%, 100% { transform: scaleY(0.3); opacity: 0.7; }
+  50% { transform: scaleY(1); opacity: 1; }
 }
 .loader-eq {
   display: flex;
@@ -2625,30 +2564,7 @@ code {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Lebendigere CTAs & Karten ───────────────────────────────── */
-/* Haupt-CTA: sanft wandernder Verlauf + atmender Glow */
-.btn-spin.btn-primary {
-  background-size: 200% auto;
-  animation: cta-shift 5s ease-in-out infinite;
-}
-@keyframes cta-shift {
-  0%, 100% { background-position: 0% center; }
-  50% { background-position: 100% center; }
-}
-.glow-strong {
-  animation: cta-glow 3.4s ease-in-out infinite;
-}
-@keyframes cta-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 1px var(--border-strong), 0 0 50px rgba(34, 211, 238, 0.22),
-      0 0 80px rgba(244, 63, 142, 0.14);
-  }
-  50% {
-    box-shadow: 0 0 0 1px var(--border-strong), 0 0 72px rgba(34, 211, 238, 0.4),
-      0 0 110px rgba(244, 63, 142, 0.28);
-  }
-}
-/* Karten heben sich etwas stärker/lebendiger */
+/* ── Karten-Hover ────────────────────────────────────────────── */
 .playlist-card,
 .discover-banner {
   transition: transform 0.18s var(--ease-out), border-color 0.2s, box-shadow 0.2s, background 0.2s;
@@ -2689,28 +2605,14 @@ code {
 .logo-ring-inner { stroke: var(--accent-2); stroke-width: 1.4; opacity: 0.55; }
 .logo-ticks-inner { stroke: var(--accent-2); stroke-width: 5; stroke-dasharray: 1 8.4; }
 .logo-svg .logo-mic { stroke: var(--accent-2); stroke-width: 2; }
-/* Der äußere Ring dreht sich langsam (Roulette-Feeling) */
-.logo-ticks-outer,
-.logo-ring-outer {
-  transform-origin: 50% 50%;
-  animation: logo-spin 24s linear infinite;
-}
-.logo-ticks-inner {
-  transform-origin: 50% 50%;
-  animation: logo-spin 18s linear infinite reverse;
-}
-@keyframes logo-spin {
-  to { transform: rotate(360deg); }
-}
 
-/* Brand-Logo auf der Startseite */
+/* Brand-Logo auf der Startseite (statisch) */
 .brand-logo {
   position: relative;
   width: 120px;
   height: 120px;
   display: grid;
   place-items: center;
-  animation: mic-float 5s ease-in-out infinite;
   box-shadow: none;
   background: none;
   border: none;

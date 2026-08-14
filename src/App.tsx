@@ -168,6 +168,8 @@ export function App() {
 
   // Gast-Modus (rollen ohne Spotify-Login)
   const [isGuest, setIsGuest] = useState(false)
+  // Offline-Modus (eigener Bereich: „Playlist wechseln" führt zurück zur Playlist-Auswahl)
+  const [isOffline, setIsOffline] = useState(false)
   const [guestName, setGuestName] = useState<string | null>(null)
 
   // Konvertierte Songs (aus dem Konverter, direkt im Roulette nutzbar)
@@ -227,6 +229,14 @@ export function App() {
         .map((t) => (coverMap[t.id] ? { ...t, coverUrl: coverMap[t.id] } : t)),
     [tracks, excludedIds, coverMap],
   )
+
+  // Playlist fürs Home: Offline-Listen haben kein eigenes Bild -> zeige das
+  // Cover des ersten geladenen Songs als Playlist-Cover.
+  const homePlaylist = useMemo(() => {
+    if (!activePlaylist || activePlaylist.imageUrl) return activePlaylist
+    const firstCover = pool.find((tk) => tk.coverUrl)?.coverUrl ?? null
+    return firstCover ? { ...activePlaylist, imageUrl: firstCover } : activePlaylist
+  }, [activePlaylist, pool])
 
   const showError = useCallback((msg: string) => setError(msg), [])
 
@@ -402,6 +412,7 @@ export function App() {
   }, [auth.status, activePlaylist])
 
   const selectPlaylist = useCallback((pl: Playlist) => {
+    setIsOffline(false)
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
     setDrawnIds(loadDrawnIds(pl.id))
@@ -412,6 +423,7 @@ export function App() {
 
   // ── Entdecken: Genre als Quelle wählen ──
   const selectDiscover = useCallback((genre: Genre) => {
+    setIsOffline(false)
     const pl = makeDiscoverPlaylist(genre)
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
@@ -423,6 +435,7 @@ export function App() {
 
   // ── Artist-Modus: Artists als Quelle wählen ──
   const selectArtists = useCallback((names: string[], limit: number) => {
+    setIsOffline(false)
     setArtistNames(names)
     setArtistLimit(limit)
     saveArtistNames(names) // vor dem Laden speichern (loadTracksFor liest sie)
@@ -438,6 +451,7 @@ export function App() {
 
   // ── Album-Modus: Alben als Quelle wählen ──
   const selectAlbums = useCallback((names: string[], limit: number) => {
+    setIsOffline(false)
     setAlbumNames(names)
     setAlbumLimit(limit)
     saveAlbumNames(names)
@@ -453,6 +467,7 @@ export function App() {
 
   // ── Konverter: gefundene Songs DIREKT im Roulette nutzen (kein Schreibzugriff nötig) ──
   const useConvertedTracks = useCallback((name: string, trks: Track[]) => {
+    setIsOffline(false)
     setConvertedTracks(trks)
     try {
       localStorage.setItem(CONVERT_TRACKS_KEY, JSON.stringify(trks))
@@ -492,6 +507,7 @@ export function App() {
     }
     const pl = makeConvertPlaylist(name || 'Party', trks.length)
     setIsGuest(true) // wie Gast-Modus: umgeht Spotify-Login-Gates
+    setIsOffline(true) // eigener Offline-Bereich (Navigation zurück zur Auswahl)
     setActivePlaylist(pl)
     saveActivePlaylist(pl)
     setDrawnIds(new Set())
@@ -522,6 +538,7 @@ export function App() {
 
   // ── Konverter: neu erstellte Playlist direkt als Quelle nutzen ──
   const useConvertedPlaylist = useCallback((created: CreatedPlaylist, trackCount: number) => {
+    setIsOffline(false)
     const pl: Playlist = {
       id: created.id,
       name: created.name,
@@ -550,6 +567,7 @@ export function App() {
     }
     const pl = makeGuestPlaylist(g.name)
     setIsGuest(true)
+    setIsOffline(false)
     setActivePlaylist(pl)
     setDrawnIds(loadDrawnIds(pl.id))
     setExcludedIds(loadExcludedIds(pl.id))
@@ -559,10 +577,19 @@ export function App() {
 
   const exitGuest = useCallback(() => {
     setIsGuest(false)
+    setIsOffline(false)
     setActivePlaylist(null)
     setTracks([])
     setView('home')
   }, [])
+
+  // „Playlist/Quelle wechseln": Offline -> zurück zur Offline-Auswahl,
+  // Gast -> Gast beenden, sonst (Spotify) -> Playlist-Picker.
+  const changeSource = useCallback(() => {
+    if (isOffline) setView('offline')
+    else if (isGuest) exitGuest()
+    else openPicker()
+  }, [isOffline, isGuest, exitGuest, openPicker])
 
   /** Aktuelle Playlist als Gast-Snapshot (JSON) herunterladen. */
   const exportGuest = useCallback(() => {
@@ -768,7 +795,7 @@ export function App() {
     )
   } else if (view === 'result' && winner) {
     content = (
-      <Result track={winner} onAgain={spin} onChangePlaylist={openPicker} />
+      <Result track={winner} onAgain={spin} onChangePlaylist={changeSource} />
     )
   } else if (preparingCovers) {
     // Kurzer „Cover werden geladen…"-Moment vor dem ersten Spin.
@@ -797,9 +824,9 @@ export function App() {
       <Spinner label={t('app.loadingSongs')} />
     ) : (
       <Home
-        playlist={activePlaylist}
+        playlist={homePlaylist ?? activePlaylist}
         onSpin={spin}
-        onChangePlaylist={isGuest ? exitGuest : openPicker}
+        onChangePlaylist={changeSource}
         onManageSongs={() => setView('manage')}
         onReset={resetDrawn}
         remaining={remaining}
