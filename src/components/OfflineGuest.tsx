@@ -5,17 +5,91 @@ import { KARAOKE_PRESETS } from '../data/karaokePresets'
 import { DiceIcon } from './icons'
 
 interface OfflineGuestProps {
-  /** Startet das Roulette mit den eingetippten Songs. */
+  /** Startet das Roulette mit den (fertigen oder eingetippten) Songs. */
   onStart: (name: string, lines: ParsedLine[]) => void
   onCancel: () => void
 }
 
 /**
- * Offline-Gäste-Modus: Songs + Interpreten eintippen und sofort spinnen –
- * ganz ohne Spotify-Login. Die Cover kommen aus einem geteilten Bild
- * (zufällig zugewiesen).
+ * Offline-Gäste-Modus. Zeigt fertige Karaoke-Playlists als anklickbare
+ * Karten (wie die Spotify-Ansicht) – ein Klick startet die Playlist.
+ * Über „Eigene Liste" lassen sich Songs auch selbst eintippen.
  */
 export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
+  const { t } = useI18n()
+  const [mode, setMode] = useState<'list' | 'custom'>('list')
+
+  // ── Auswahl der fertigen Playlists ──
+  if (mode === 'list') {
+    return (
+      <section className="stage fade-in">
+        <header className="picker-header">
+          <div>
+            <h2 className="picker-title">{t('offline.title')}</h2>
+            <p className="picker-subtitle">{t('offline.pickHint')}</p>
+          </div>
+          <button className="btn btn-ghost" onClick={onCancel}>
+            {t('common.back')}
+          </button>
+        </header>
+
+        <ul className="playlist-grid">
+          {KARAOKE_PRESETS.map((preset) => {
+            const name = t(`offline.preset.${preset.id}`)
+            return (
+              <li key={preset.id}>
+                <button
+                  className="playlist-card"
+                  onClick={() => onStart(name, parseList(preset.songs.join('\n'), false))}
+                  title={name}
+                >
+                  <div className="playlist-cover-wrap">
+                    <div className={`offline-cover offline-cover-${preset.id}`}>
+                      <span className="offline-cover-emoji">{preset.emoji}</span>
+                    </div>
+                  </div>
+                  <div className="playlist-info">
+                    <span className="playlist-name">{name}</span>
+                    <span className="playlist-count">
+                      {preset.songs.length} {t('common.songs')}
+                    </span>
+                  </div>
+                </button>
+              </li>
+            )
+          })}
+
+          {/* Eigene Liste eintippen */}
+          <li>
+            <button className="playlist-card" onClick={() => setMode('custom')}>
+              <div className="playlist-cover-wrap">
+                <div className="offline-cover offline-cover-custom">
+                  <span className="offline-cover-emoji">✏️</span>
+                </div>
+              </div>
+              <div className="playlist-info">
+                <span className="playlist-name">{t('offline.custom.title')}</span>
+                <span className="playlist-count">{t('offline.custom.hint')}</span>
+              </div>
+            </button>
+          </li>
+        </ul>
+      </section>
+    )
+  }
+
+  // ── Eigene Liste eintippen ──
+  return <CustomForm onStart={onStart} onBack={() => setMode('list')} />
+}
+
+// ── Formular für eine selbst eingetippte Liste ───────────────
+
+interface CustomFormProps {
+  onStart: (name: string, lines: ParsedLine[]) => void
+  onBack: () => void
+}
+
+function CustomForm({ onStart, onBack }: CustomFormProps) {
   const { t } = useI18n()
   const [text, setText] = useState('')
   const [name, setName] = useState('')
@@ -27,36 +101,15 @@ export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
     <section className="stage fade-in conv">
       <header className="picker-header">
         <div>
-          <h2 className="picker-title">{t('offline.title')}</h2>
+          <h2 className="picker-title">{t('offline.custom.title')}</h2>
           <p className="picker-subtitle">{t('offline.subtitle')}</p>
         </div>
-        <button className="btn btn-ghost" onClick={onCancel}>
+        <button className="btn btn-ghost" onClick={onBack}>
           {t('common.back')}
         </button>
       </header>
 
       <div className="conv-input">
-        <div className="conv-import-row offline-presets">
-          <span className="conv-import-label">{t('offline.presetsIntro')}</span>
-          <div className="offline-preset-btns">
-            {KARAOKE_PRESETS.map((preset) => (
-              <button
-                key={preset.id}
-                className="btn btn-ghost"
-                onClick={() =>
-                  setText((prev) => {
-                    const block = preset.songs.join('\n')
-                    return prev.trim() ? `${prev.trimEnd()}\n${block}` : block
-                  })
-                }
-                title={t(`offline.preset.${preset.id}`, { n: preset.songs.length })}
-              >
-                {preset.emoji} {t(`offline.preset.${preset.id}`, { n: preset.songs.length })}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <p className="conv-tip">{t('offline.tip')}</p>
 
         <textarea
@@ -66,7 +119,7 @@ export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
           placeholder={t('offline.placeholder')}
           rows={10}
           spellCheck={false}
-          aria-label={t('offline.title')}
+          aria-label={t('offline.custom.title')}
         />
         <p className="conv-hint">{t('convert.commaHint')}</p>
 
