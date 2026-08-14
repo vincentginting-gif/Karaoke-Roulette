@@ -30,15 +30,15 @@ export const translations: Record<string, Entry> = {
 
   // ── Homepage / Welcome ──
   'welcome.intro': {
-    de: 'Karaoke Roulette wählt per spannender Case-Opening-Animation zufällig einen Song aus deiner Spotify-Playlist – perfekt, um zu entscheiden, wer als Nächstes was singt.',
-    en: 'Karaoke Roulette picks a random song from your Spotify playlist with an exciting case-opening animation – perfect for deciding who sings what next.',
-    ko: 'Karaoke Roulette는 케이스 오프닝 스타일 애니메이션으로 Spotify 플레이리스트에서 노래를 무작위로 뽑아줍니다 – 다음에 누가 무엇을 부를지 정하기에 딱 좋아요.',
+    de: 'Wähle eine fertige Karaoke-Playlist, lass das Roulette drehen – und der Zufall entscheidet, wer als Nächstes was singt. Ganz ohne Anmeldung, sofort loslegen.',
+    en: 'Pick a ready-made karaoke playlist, let the roulette spin – and chance decides who sings what next. No sign-up, start right away.',
+    ko: '준비된 카라오케 플레이리스트를 고르고 룰렛을 돌리세요 – 다음에 누가 무엇을 부를지 운이 정해줍니다. 가입 없이 바로 시작.',
   },
   'welcome.how': { de: "So funktioniert's", en: 'How it works', ko: '이용 방법' },
   'welcome.step1': {
-    de: 'Mit Spotify verbinden und eine Playlist wählen – oder nach Genre, Artist oder Album entdecken.',
-    en: 'Connect Spotify and pick a playlist – or discover by genre, artist or album.',
-    ko: 'Spotify에 연결하고 플레이리스트를 선택하세요 – 또는 장르·아티스트·앨범으로 찾아보세요.',
+    de: 'Eine fertige Karaoke-Playlist wählen – oder eigene Songs eintippen.',
+    en: 'Pick a ready-made karaoke playlist – or type your own songs.',
+    ko: '준비된 카라오케 플레이리스트를 고르거나 직접 노래를 입력하세요.',
   },
   'welcome.step2': {
     de: 'Auf „Spin“ tippen – das Roulette dreht und bleibt auf einem zufälligen Song stehen.',
@@ -46,15 +46,21 @@ export const translations: Record<string, Entry> = {
     ko: '“Spin”을 누르면 룰렛이 돌아 무작위 노래에서 멈춥니다.',
   },
   'welcome.step3': {
-    de: 'Den Song auf Spotify oder einer anderen Plattform öffnen und lossingen.',
-    en: 'Open the song on Spotify or another platform and start singing.',
-    ko: 'Spotify나 다른 플랫폼에서 노래를 열고 노래를 시작하세요.',
+    de: 'Song öffnen und lossingen. 🎤',
+    en: 'Open the song and start singing. 🎤',
+    ko: '노래를 열고 노래를 시작하세요. 🎤',
   },
   'welcome.start': { de: 'Playlist wählen', en: 'Choose playlist', ko: '플레이리스트 선택' },
+  'welcome.offlineStart': { de: 'Sofort loslegen', en: 'Start now', ko: '바로 시작' },
+  'welcome.spotifyOptional': {
+    de: 'Ich habe Spotify (optional)',
+    en: 'I have Spotify (optional)',
+    ko: 'Spotify 있음 (선택)',
+  },
   'welcome.guest': {
-    de: 'Ohne Login starten (Gast)',
-    en: 'Start without login (guest)',
-    ko: '로그인 없이 시작 (게스트)',
+    de: 'Gast-Playlist starten',
+    en: 'Start guest playlist',
+    ko: '게스트 플레이리스트 시작',
   },
 
   // ── Verbinden ──
@@ -235,13 +241,21 @@ export const translations: Record<string, Entry> = {
   'offline.preset.disney': { de: 'Disney', en: 'Disney', ko: '디즈니' },
   'offline.preset.retro': { de: '90er & 2000er', en: '90s & 2000s', ko: '90·2000년대' },
   'offline.preset.latino': { de: 'Latino', en: 'Latino', ko: '라티노' },
-  'offline.custom.title': { de: 'Eigene Liste', en: 'Custom list', ko: '직접 입력' },
-  'offline.custom.hint': { de: 'Songs selbst eintippen', en: 'Type songs yourself', ko: '노래 직접 입력' },
+  'offline.custom.title': { de: 'Eigene Liste erstellen', en: 'Create your own list', ko: '직접 목록 만들기' },
+  'offline.custom.hint': { de: 'Songs & Interpreten selbst eintippen', en: 'Type your own songs & artists', ko: '노래와 아티스트를 직접 입력' },
   'offline.pickHint': {
-    de: 'Wähle eine Playlist – oder tippe eigene Songs ein.',
-    en: 'Pick a playlist – or type your own songs.',
-    ko: '플레이리스트를 선택하거나 직접 노래를 입력하세요.',
+    de: 'Such dir eine Playlist aus und leg los – ganz gemütlich, ohne Anmeldung.',
+    en: 'Pick a playlist and get going – nice and easy, no sign-up.',
+    ko: '플레이리스트를 골라 편하게 시작하세요 – 가입 없이.',
   },
+  'offline.sectionReady': { de: 'Fertige Playlists', en: 'Ready-made playlists', ko: '준비된 플레이리스트' },
+  'offline.sectionOwn': { de: 'Deine eigene Liste', en: 'Your own list', ko: '나만의 목록' },
+  'offline.desc.top100': { de: 'Die größten Karaoke-Hits weltweit', en: 'The biggest karaoke hits worldwide', ko: '전 세계 최고의 카라오케 히트곡' },
+  'offline.desc.de': { de: 'NDW, Schlager & Deutschrock zum Mitgrölen', en: 'German pop, Schlager & rock singalongs', ko: '독일 팝·슐라거·록 떼창곡' },
+  'offline.desc.kpop': { de: 'BTS, BLACKPINK, NewJeans & mehr', en: 'BTS, BLACKPINK, NewJeans & more', ko: 'BTS, BLACKPINK, NewJeans 등' },
+  'offline.desc.disney': { de: 'Zum Mitsingen für Groß & Klein', en: 'Singalongs for young & old', ko: '남녀노소 함께 부르는 노래' },
+  'offline.desc.retro': { de: 'Nostalgie pur zum Mitsingen', en: 'Pure nostalgia to sing along', ko: '추억의 떼창곡' },
+  'offline.desc.latino': { de: 'Reggaeton & Latin-Pop zum Tanzen', en: 'Reggaeton & Latin pop to dance to', ko: '춤추는 레게톤·라틴 팝' },
 
   'result.search': { de: 'Auf Spotify suchen', en: 'Search on Spotify', ko: 'Spotify에서 검색' },
   'convert.textareaLabel': { de: 'Songliste', en: 'Song list', ko: '노래 목록' },

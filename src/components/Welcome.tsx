@@ -1,5 +1,6 @@
 import { useI18n } from '../i18n/i18n'
-import { DiceIcon, MicIcon, SpotifyIcon } from './icons'
+import { Logo } from './Logo'
+import { DiceIcon, SpotifyIcon } from './icons'
 
 interface WelcomeProps {
   connected: boolean
@@ -7,11 +8,11 @@ interface WelcomeProps {
   onStart: () => void
   guestAvailable?: boolean
   onGuest?: () => void
-  /** Offline-Modus starten (Songs eintippen, kein Spotify). */
+  /** Offline-Modus starten (fertige Playlists / eigene Songs, kein Spotify). */
   onOffline?: () => void
 }
 
-/** Homepage / Landing: erklärt die App und führt zum Start. */
+/** Homepage / Landing – offline-first: ohne Anmeldung sofort loslegen. */
 export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest, onOffline }: WelcomeProps) {
   const { t } = useI18n()
   const steps = [t('welcome.step1'), t('welcome.step2'), t('welcome.step3')]
@@ -19,9 +20,9 @@ export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest
   return (
     <section className="stage stage-center fade-in welcome">
       <div className="brand">
-        <div className="brand-mic glow">
+        <div className="brand-logo glow">
           <span className="brand-mic-halo" aria-hidden="true" />
-          <MicIcon className="brand-mic-icon" />
+          <Logo className="brand-logo-mark" />
         </div>
         <h1 className="brand-title">Karaoke Roulette</h1>
         <p className="brand-subtitle">{t('brand.subtitle')}</p>
@@ -53,16 +54,17 @@ export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest
         </button>
       ) : (
         <div className="welcome-cta">
-          <button className="btn btn-spotify" onClick={onConnect}>
-            <SpotifyIcon className="btn-icon" />
-            {t('connect.button')}
-          </button>
+          {/* Offline zuerst: die meisten Nutzer haben keinen Spotify-Zugang. */}
           {onOffline && (
-            <button className="btn btn-primary" onClick={onOffline}>
+            <button className="btn btn-primary btn-spin glow-strong" onClick={onOffline}>
               <DiceIcon className="btn-icon" />
-              {t('welcome.offline')}
+              {t('welcome.offlineStart')}
             </button>
           )}
+          <button className="btn btn-ghost welcome-spotify" onClick={onConnect}>
+            <SpotifyIcon className="btn-icon" />
+            {t('welcome.spotifyOptional')}
+          </button>
           {guestAvailable && onGuest && (
             <button className="btn btn-ghost" onClick={onGuest}>
               <DiceIcon className="btn-icon" />
@@ -71,7 +73,6 @@ export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest
           )}
         </div>
       )}
-      {!connected && onOffline && <p className="welcome-offline-hint">{t('welcome.offlineHint')}</p>}
     </section>
   )
 }

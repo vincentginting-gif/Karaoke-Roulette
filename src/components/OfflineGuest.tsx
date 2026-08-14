@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useI18n } from '../i18n/i18n'
 import { parseList, type ParsedLine } from '../spotify/convert'
 import { KARAOKE_PRESETS } from '../data/karaokePresets'
+import { Logo } from './Logo'
 import { DiceIcon } from './icons'
 
 interface OfflineGuestProps {
@@ -11,75 +12,74 @@ interface OfflineGuestProps {
 }
 
 /**
- * Offline-Gäste-Modus. Zeigt fertige Karaoke-Playlists als anklickbare
- * Karten (wie die Spotify-Ansicht) – ein Klick startet die Playlist.
- * Über „Eigene Liste" lassen sich Songs auch selbst eintippen.
+ * Offline-Gäste-Modus (der Hauptweg). Zeigt fertige Karaoke-Playlists als
+ * gemütliche, sortierte Karten – ein Klick startet die Playlist. Über
+ * „Eigene Liste" lassen sich Songs auch selbst eintippen.
  */
 export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
   const { t } = useI18n()
   const [mode, setMode] = useState<'list' | 'custom'>('list')
 
-  // ── Auswahl der fertigen Playlists ──
-  if (mode === 'list') {
-    return (
-      <section className="stage fade-in">
-        <header className="picker-header">
-          <div>
-            <h2 className="picker-title">{t('offline.title')}</h2>
-            <p className="picker-subtitle">{t('offline.pickHint')}</p>
-          </div>
-          <button className="btn btn-ghost" onClick={onCancel}>
-            {t('common.back')}
-          </button>
-        </header>
-
-        <ul className="playlist-grid">
-          {KARAOKE_PRESETS.map((preset) => {
-            const name = t(`offline.preset.${preset.id}`)
-            return (
-              <li key={preset.id}>
-                <button
-                  className="playlist-card"
-                  onClick={() => onStart(name, parseList(preset.songs.join('\n'), false))}
-                  title={name}
-                >
-                  <div className="playlist-cover-wrap">
-                    <div className={`offline-cover offline-cover-${preset.id}`}>
-                      <span className="offline-cover-emoji">{preset.emoji}</span>
-                    </div>
-                  </div>
-                  <div className="playlist-info">
-                    <span className="playlist-name">{name}</span>
-                    <span className="playlist-count">
-                      {preset.songs.length} {t('common.songs')}
-                    </span>
-                  </div>
-                </button>
-              </li>
-            )
-          })}
-
-          {/* Eigene Liste eintippen */}
-          <li>
-            <button className="playlist-card" onClick={() => setMode('custom')}>
-              <div className="playlist-cover-wrap">
-                <div className="offline-cover offline-cover-custom">
-                  <span className="offline-cover-emoji">✏️</span>
-                </div>
-              </div>
-              <div className="playlist-info">
-                <span className="playlist-name">{t('offline.custom.title')}</span>
-                <span className="playlist-count">{t('offline.custom.hint')}</span>
-              </div>
-            </button>
-          </li>
-        </ul>
-      </section>
-    )
+  if (mode === 'custom') {
+    return <CustomForm onStart={onStart} onBack={() => setMode('list')} />
   }
 
-  // ── Eigene Liste eintippen ──
-  return <CustomForm onStart={onStart} onBack={() => setMode('list')} />
+  // ── Auswahl der fertigen Playlists ──
+  return (
+    <section className="stage fade-in offline-home">
+      <header className="offline-header">
+        <div className="offline-header-logo" aria-hidden="true">
+          <Logo />
+        </div>
+        <div className="offline-header-text">
+          <h2 className="offline-heading">{t('offline.title')}</h2>
+          <p className="offline-subheading">{t('offline.pickHint')}</p>
+        </div>
+        <button className="btn btn-ghost offline-back" onClick={onCancel}>
+          {t('common.back')}
+        </button>
+      </header>
+
+      <h3 className="offline-section">{t('offline.sectionReady')}</h3>
+      <ul className="offline-grid">
+        {KARAOKE_PRESETS.map((preset) => {
+          const name = t(`offline.preset.${preset.id}`)
+          return (
+            <li key={preset.id}>
+              <button
+                className="offline-card"
+                onClick={() => onStart(name, parseList(preset.songs.join('\n'), false))}
+                title={name}
+              >
+                <div className={`offline-cover offline-cover-${preset.id}`}>
+                  <span className="offline-cover-emoji">{preset.emoji}</span>
+                  <span className="offline-card-badge">{preset.songs.length}</span>
+                </div>
+                <div className="offline-card-info">
+                  <span className="offline-card-name">{name}</span>
+                  <span className="offline-card-desc">{t(`offline.desc.${preset.id}`)}</span>
+                </div>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      <h3 className="offline-section">{t('offline.sectionOwn')}</h3>
+      <button className="offline-custom-card" onClick={() => setMode('custom')}>
+        <span className="offline-custom-icon" aria-hidden="true">
+          ✏️
+        </span>
+        <span className="offline-custom-text">
+          <span className="offline-custom-title">{t('offline.custom.title')}</span>
+          <span className="offline-custom-hint">{t('offline.custom.hint')}</span>
+        </span>
+        <span className="offline-custom-arrow" aria-hidden="true">
+          →
+        </span>
+      </button>
+    </section>
+  )
 }
 
 // ── Formular für eine selbst eingetippte Liste ───────────────

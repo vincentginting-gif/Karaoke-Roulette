@@ -2661,3 +2661,222 @@ code {
   transform: translateY(-3px);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
 }
+
+/* ── App-Logo (neon Mikro im Roulette-Ring) ──────────────────── */
+.logo {
+  display: block;
+}
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 18px;
+}
+.logo-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.75)) drop-shadow(0 0 9px rgba(244, 63, 142, 0.45));
+}
+.logo-svg circle,
+.logo-svg .logo-mic {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.logo-ring-outer { stroke: var(--accent); stroke-width: 2; opacity: 0.9; }
+.logo-ticks-outer { stroke: var(--accent); stroke-width: 6.5; stroke-dasharray: 1 11.2; }
+.logo-ring-inner { stroke: var(--accent-2); stroke-width: 1.4; opacity: 0.55; }
+.logo-ticks-inner { stroke: var(--accent-2); stroke-width: 5; stroke-dasharray: 1 8.4; }
+.logo-svg .logo-mic { stroke: var(--accent-2); stroke-width: 2; }
+/* Der äußere Ring dreht sich langsam (Roulette-Feeling) */
+.logo-ticks-outer,
+.logo-ring-outer {
+  transform-origin: 50% 50%;
+  animation: logo-spin 24s linear infinite;
+}
+.logo-ticks-inner {
+  transform-origin: 50% 50%;
+  animation: logo-spin 18s linear infinite reverse;
+}
+@keyframes logo-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Brand-Logo auf der Startseite */
+.brand-logo {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: grid;
+  place-items: center;
+  animation: mic-float 5s ease-in-out infinite;
+  box-shadow: none;
+  background: none;
+  border: none;
+}
+.brand-logo-mark {
+  width: 100%;
+  height: 100%;
+}
+.welcome-spotify {
+  opacity: 0.9;
+}
+.welcome-spotify:hover {
+  opacity: 1;
+}
+
+/* ── Offline-Startseite (Hauptweg): gemütlich & sortiert ─────── */
+.offline-home {
+  gap: 6px;
+}
+.offline-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.offline-header-logo {
+  flex: none;
+  width: 60px;
+  height: 60px;
+}
+.offline-header-text {
+  flex: 1;
+  min-width: 0;
+}
+.offline-heading {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.offline-subheading {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.offline-back {
+  flex: none;
+  align-self: flex-start;
+}
+.offline-section {
+  margin: 22px 2px 12px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+.offline-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+.offline-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface), rgba(255, 255, 255, 0.02));
+  text-align: left;
+  transition: transform 0.18s var(--ease-out), border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.offline-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-strong);
+  background: linear-gradient(180deg, var(--surface-hover), var(--surface));
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.offline-card .offline-cover {
+  position: relative;
+  border-radius: 14px;
+}
+.offline-card-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 26px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+}
+.offline-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 4px 4px;
+}
+.offline-card-name {
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.offline-card-desc {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.35;
+}
+
+/* „Eigene Liste"-Karte */
+.offline-custom-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px dashed var(--border-strong);
+  background: linear-gradient(100deg, rgba(124, 92, 255, 0.08), rgba(34, 211, 238, 0.05));
+  text-align: left;
+  transition: transform 0.18s var(--ease-out), border-color 0.2s, background 0.2s;
+}
+.offline-custom-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: linear-gradient(100deg, rgba(124, 92, 255, 0.14), rgba(34, 211, 238, 0.08));
+}
+.offline-custom-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--surface);
+  font-size: 1.5rem;
+}
+.offline-custom-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.offline-custom-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+.offline-custom-hint {
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+.offline-custom-arrow {
+  flex: none;
+  font-size: 1.3rem;
+  color: var(--text-faint);
+}
