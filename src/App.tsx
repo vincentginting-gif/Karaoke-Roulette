@@ -185,6 +185,9 @@ export function App() {
   const [tracks, setTracks] = useState<Track[]>([])
   const [tracksLoading, setTracksLoading] = useState(false)
 
+  // Nachgeladene Album-Cover (iTunes) für Offline-Songs: trackId -> Bild-URL.
+  const [coverMap, setCoverMap] = useState<Record<string, string>>({})
+
   // Eigene Spotify-User-ID (für Besitz-Erkennung der Playlists)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
@@ -214,10 +217,40 @@ export function App() {
   const [albumNames, setAlbumNames] = useState<string[]>(() => loadAlbumNames())
   const [albumLimit, setAlbumLimit] = useState<number>(() => loadAlbumLimit())
 
-  // Ziehbarer Pool = alle Tracks ohne die manuell entfernten.
-  const pool = useMemo(() => tracks.filter((t) => !excludedIds.has(t.id)), [tracks, excludedIds])
+  // Ziehbarer Pool = alle Tracks ohne die manuell entfernten. Nachgeladene
+  // Cover (coverMap) werden hier angewendet – so erscheinen sie auf dem
+  // Roulette-Strip UND im Ergebnis, ohne die tracks-Ladelogik zu stören.
+  const pool = useMemo(
+    () =>
+      tracks
+        .filter((t) => !excludedIds.has(t.id))
+        .map((t) => (coverMap[t.id] ? { ...t, coverUrl: coverMap[t.id] } : t)),
+    [tracks, excludedIds, coverMap],
+  )
 
   const showError = useCallback((msg: string) => setError(msg), [])
+
+  // ── Album-Cover (iTunes) für Offline-Songs nachladen ──
+  // Für alle Tracks mit Quadranten-Platzhalter, die noch kein Cover haben.
+  useEffect(() => {
+    const needing = tracks.filter(
+      (t) => (t.coverUrl ?? '').startsWith('quad:') && !coverMap[t.id],
+    )
+    if (needing.length === 0) return
+    let cancelled = false
+    void prefetchCovers(
+      needing.map((t) => ({ id: t.id, title: t.title, artist: t.artist })),
+      (id, url) => {
+        if (!cancelled) setCoverMap((prev) => (prev[id] ? prev : { ...prev, [id]: url }))
+      },
+      4,
+    )
+    return () => {
+      cancelled = true
+    }
+    // coverMap bewusst NICHT in den Deps: sonst Neustart bei jedem Cover.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks])
 
   // ── Fehler aus Auth-Hook übernehmen ──
   useEffect(() => {
@@ -452,37 +485,7 @@ export function App() {
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
     setView('home')
-
-    // Echte Album-Cover (iTunes) im Hintergrund nachladen und einspielen.
-    // Der Quadranten-Platzhalter bleibt, bis ein Cover gefunden ist.
-    void (async () => {
-      const found: Record<string, string> = {}
-      let sinceFlush = 0
-      const flush = () => {
-        if (Object.keys(found).length === 0) return
-        const updates = { ...found }
-        const patch = (list: Track[]) =>
-          list.map((t) => (updates[t.id] ? { ...t, coverUrl: updates[t.id] } : t))
-        setConvertedTracks((prev) => {
-          const next = patch(prev)
-          try {
-            localStorage.setItem(CONVERT_TRACKS_KEY, JSON.stringify(next))
-          } catch {
-            /* nicht kritisch */
-          }
-          return next
-        })
-        setTracks((prev) => patch(prev))
-      }
-      await prefetchCovers(trks, (id, url) => {
-        found[id] = url
-        if (++sinceFlush >= 8) {
-          sinceFlush = 0
-          flush()
-        }
-      })
-      flush()
-    })()
+    // Cover werden vom Effekt unten (auf tracks) im Hintergrund nachgeladen.
   }, [])
 
   // ── Gespeicherte JSON-Datei importieren (aus dem Picker) ──
