@@ -20,10 +20,16 @@ export function Welcome({ connected, onConnect, onStart, guestAvailable, onGuest
     <section className="stage stage-center fade-in welcome">
       <div className="brand">
         <div className="brand-mic glow">
+          <span className="brand-mic-halo" aria-hidden="true" />
           <MicIcon className="brand-mic-icon" />
         </div>
         <h1 className="brand-title">Karaoke Roulette</h1>
         <p className="brand-subtitle">{t('brand.subtitle')}</p>
+        <div className="brand-eq" aria-hidden="true">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <span key={i} />
+          ))}
+        </div>
       </div>
 
       <p className="welcome-intro">{t('welcome.intro')}</p>
