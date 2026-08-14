@@ -13,6 +13,7 @@ import {
 } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
 import { parseImportedJson, type ParsedLine } from './spotify/convert'
+import { prefetchCovers } from './spotify/itunes'
 import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
@@ -451,6 +452,37 @@ export function App() {
     setExcludedIds(loadExcludedIds(pl.id))
     setLastWinnerId(null)
     setView('home')
+
+    // Echte Album-Cover (iTunes) im Hintergrund nachladen und einspielen.
+    // Der Quadranten-Platzhalter bleibt, bis ein Cover gefunden ist.
+    void (async () => {
+      const found: Record<string, string> = {}
+      let sinceFlush = 0
+      const flush = () => {
+        if (Object.keys(found).length === 0) return
+        const updates = { ...found }
+        const patch = (list: Track[]) =>
+          list.map((t) => (updates[t.id] ? { ...t, coverUrl: updates[t.id] } : t))
+        setConvertedTracks((prev) => {
+          const next = patch(prev)
+          try {
+            localStorage.setItem(CONVERT_TRACKS_KEY, JSON.stringify(next))
+          } catch {
+            /* nicht kritisch */
+          }
+          return next
+        })
+        setTracks((prev) => patch(prev))
+      }
+      await prefetchCovers(trks, (id, url) => {
+        found[id] = url
+        if (++sinceFlush >= 8) {
+          sinceFlush = 0
+          flush()
+        }
+      })
+      flush()
+    })()
   }, [])
 
   // ── Gespeicherte JSON-Datei importieren (aus dem Picker) ──

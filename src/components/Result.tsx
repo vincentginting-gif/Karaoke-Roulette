@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Track } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
 import { fetchPlatformLinks, songlinkPageUrl, type PlatformLink } from '../spotify/odesli'
+import { cachedCover, fetchCover } from '../spotify/itunes'
 import { AlbumCover } from './AlbumCover'
 import { DiceIcon, ExternalIcon } from './icons'
 
@@ -19,6 +20,29 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
   // Echte Spotify-Track-ID? (22 Base62-Zeichen). Offline-Songs haben keine –
   // dann wird „Öffnen" zur Spotify-Suche und die Cross-Plattform-Links entfallen.
   const isRealTrack = /^[A-Za-z0-9]{22}$/.test(track.id)
+
+  // Offline-Songs zeigen einen Quadranten-Platzhalter -> echtes Cover
+  // (iTunes) nachladen, damit der Gewinner ein passendes Cover hat.
+  const isPlaceholder = (track.coverUrl ?? '').startsWith('quad:')
+  const [cover, setCover] = useState<string | null>(
+    isPlaceholder ? cachedCover(track.title, track.artist) ?? track.coverUrl : track.coverUrl,
+  )
+  useEffect(() => {
+    if (!isPlaceholder) {
+      setCover(track.coverUrl)
+      return
+    }
+    const hit = cachedCover(track.title, track.artist)
+    setCover(hit ?? track.coverUrl)
+    if (hit) return
+    let cancelled = false
+    void fetchCover(track.title, track.artist).then((u) => {
+      if (!cancelled && u) setCover(u)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [track.id, track.title, track.artist, track.coverUrl, isPlaceholder])
 
   // Best-Effort: direkte Links zu anderen Plattformen laden. Bei Fehler
   // (CORS/Netzwerk) bleibt es beim universellen „song.link"-Button.
@@ -43,7 +67,7 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
       <p className="result-kicker">{t('result.kicker')}</p>
 
       <div className="result-cover-wrap glow-strong">
-        <AlbumCover url={track.coverUrl} alt={`${track.title} – ${track.artist}`} className="result-cover" />
+        <AlbumCover url={cover} alt={`${track.title} – ${track.artist}`} className="result-cover" />
       </div>
 
       <h2 className="result-title">{track.title}</h2>

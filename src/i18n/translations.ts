@@ -204,14 +204,14 @@ export const translations: Record<string, Entry> = {
   },
   'offline.title': { de: 'Ohne Spotify spielen', en: 'Play without Spotify', ko: 'Spotify 없이 플레이' },
   'offline.subtitle': {
-    de: 'Songs & Interpreten eintippen und sofort spinnen – kein Login, keine echten Cover.',
-    en: 'Type songs & artists and spin right away – no login, no real covers.',
-    ko: '노래와 아티스트를 입력하고 바로 돌리세요 – 로그인도, 실제 커버도 필요 없어요.',
+    de: 'Songs & Interpreten eintippen und sofort spinnen – kein Login nötig.',
+    en: 'Type songs & artists and spin right away – no login needed.',
+    ko: '노래와 아티스트를 입력하고 바로 돌리세요 – 로그인 필요 없음.',
   },
   'offline.tip': {
-    de: 'Eine Zeile pro Song, z. B. „Marry You – Bruno Mars“. Jeder Song bekommt zufällig eines der vier Cover-Bilder.',
-    en: 'One song per line, e.g. “Marry You – Bruno Mars”. Each song gets one of the four cover images at random.',
-    ko: '한 줄에 한 곡, 예: “Marry You – Bruno Mars”. 각 곡은 네 개의 커버 이미지 중 하나를 무작위로 받습니다.',
+    de: 'Eine Zeile pro Song, z. B. „Marry You – Bruno Mars“. Die Album-Cover werden automatisch geladen (bis dahin ein Platzhalter).',
+    en: 'One song per line, e.g. “Marry You – Bruno Mars”. Album covers load automatically (a placeholder shows until then).',
+    ko: '한 줄에 한 곡, 예: “Marry You – Bruno Mars”. 앨범 커버는 자동으로 불러옵니다 (그전까지는 임시 이미지).',
   },
   'offline.placeholder': {
     de: 'Marry You – Bruno Mars\nRisk It All – Bruno Mars\nHello – Adele\n…',
