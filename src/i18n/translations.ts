@@ -108,6 +108,8 @@ export const translations: Record<string, Entry> = {
   'home.manageSongs': { de: 'Songs verwalten', en: 'Manage songs', ko: '노래 관리' },
   'home.playlist': { de: 'Playlist', en: 'Playlist', ko: '플레이리스트' },
   'home.change': { de: 'wechseln', en: 'change', ko: '변경' },
+  'home.manage': { de: 'verwalten', en: 'manage', ko: '관리' },
+  'home.managePlaylist': { de: 'Playlist verwalten', en: 'Manage playlist', ko: '플레이리스트 관리' },
   'home.remaining': {
     de: 'Noch {remaining} von {total} {songs} ungezogen',
     en: '{remaining} of {total} {songs} still undrawn',

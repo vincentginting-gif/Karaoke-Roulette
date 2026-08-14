@@ -1,7 +1,8 @@
 import type { Playlist } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
-import { DiceIcon, MicIcon, TrashIcon, UndoIcon } from './icons'
+import { Logo } from './Logo'
+import { DiceIcon, TrashIcon, UndoIcon } from './icons'
 
 interface HomeProps {
   playlist: Playlist
@@ -28,20 +29,20 @@ export function Home({
   return (
     <section className="stage stage-center fade-in">
       <div className="brand brand-compact">
-        <div className="brand-mic glow">
-          <MicIcon className="brand-mic-icon" />
+        <div className="brand-logo brand-logo-compact">
+          <Logo className="brand-logo-mark" />
         </div>
         <h1 className="brand-title">Karaoke Roulette</h1>
         <p className="brand-subtitle">{t('brand.subtitle')}</p>
       </div>
 
-      <button className="active-playlist" onClick={onChangePlaylist} title={t('home.changePlaylist')}>
+      <button className="active-playlist" onClick={onManageSongs} title={t('home.managePlaylist')}>
         <AlbumCover url={playlist.imageUrl} alt={playlist.name} className="active-playlist-cover" />
         <span className="active-playlist-meta">
           <span className="active-playlist-label">{t('home.playlist')}</span>
           <span className="active-playlist-name">{playlist.name}</span>
         </span>
-        <span className="active-playlist-change">{t('home.change')}</span>
+        <span className="active-playlist-change">{t('home.manage')}</span>
       </button>
 
       <button className="btn btn-primary btn-spin glow-strong" onClick={onSpin}>
