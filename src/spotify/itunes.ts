@@ -35,31 +35,55 @@ export function cachedCover(title: string, artist: string): string | undefined {
   return mem[keyOf(title, artist)]
 }
 
+/** Direkter iTunes-Aufruf (Fallback, wenn der eigene Proxy nicht da ist). */
+async function fetchCoverDirect(title: string, artist: string): Promise<string | null> {
+  const term = encodeURIComponent(`${title} ${artist}`.trim())
+  try {
+    const res = await fetch(`https://itunes.apple.com/search?term=${term}&entity=song&limit=1`)
+    if (!res.ok) return null
+    const data = (await res.json()) as { results?: { artworkUrl100?: string }[] }
+    const art = data.results?.[0]?.artworkUrl100
+    if (!art) return null
+    return art.replace('100x100bb', '600x600bb')
+  } catch {
+    return null
+  }
+}
+
 /**
- * Lädt das Album-Cover zu „Titel + Interpret" über die iTunes-Suche.
- * Liefert eine hochauflösende Bild-URL oder null. Fehlertolerant (nie throw).
+ * Lädt das Album-Cover zu „Titel + Interpret".
+ * Zuerst über den eigenen Proxy (/api/cover, gleiche Origin – robust gegen
+ * CORS/Adblocker/Regionssperren); fällt bei fehlendem Proxy (z. B. lokaler
+ * Dev-Server ohne Vercel-Funktionen) auf den direkten iTunes-Aufruf zurück.
+ * Ergebnis wird gecacht. Fehlertolerant (nie throw).
  */
 export async function fetchCover(title: string, artist: string): Promise<string | null> {
   const k = keyOf(title, artist)
   if (mem[k]) return mem[k]
 
-  const term = encodeURIComponent(`${title} ${artist}`.trim())
+  let cover: string | null = null
   try {
     const res = await fetch(
-      `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`,
+      `/api/cover?title=${encodeURIComponent(title)}&artist=${encodeURIComponent(artist)}`,
     )
-    if (!res.ok) return null
-    const data = (await res.json()) as { results?: { artworkUrl100?: string }[] }
-    const art = data.results?.[0]?.artworkUrl100
-    if (!art) return null
-    // 100x100 -> größere Variante (die iTunes-URL kodiert die Größe im Pfad).
-    const big = art.replace('100x100bb', '600x600bb')
-    mem[k] = big
-    persist()
-    return big
+    if (res.ok) {
+      // Proxy hat geantwortet -> Ergebnis übernehmen (auch null = nichts gefunden).
+      const data = (await res.json()) as { cover?: string | null }
+      cover = data.cover ?? null
+    } else {
+      // Proxy nicht verfügbar (404 o. ä.) -> direkt bei iTunes versuchen.
+      cover = await fetchCoverDirect(title, artist)
+    }
   } catch {
-    return null
+    // Netzwerkfehler beim Proxy -> direkter Versuch.
+    cover = await fetchCoverDirect(title, artist)
   }
+
+  if (cover) {
+    mem[k] = cover
+    persist()
+  }
+  return cover
 }
 
 /**
