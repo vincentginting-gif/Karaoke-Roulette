@@ -230,6 +230,9 @@ export const translations: Record<string, Entry> = {
   'offline.preset.top100': { de: 'Top {n} International', en: 'Top {n} International', ko: '인기 {n} 인터내셔널' },
   'offline.preset.de': { de: 'Deutsche Hits ({n})', en: 'German hits ({n})', ko: '독일 히트 ({n})' },
   'offline.preset.kpop': { de: 'K-Pop ({n})', en: 'K-Pop ({n})', ko: 'K-팝 ({n})' },
+  'offline.preset.disney': { de: 'Disney ({n})', en: 'Disney ({n})', ko: '디즈니 ({n})' },
+  'offline.preset.retro': { de: '90er/2000er ({n})', en: '90s/2000s ({n})', ko: '90·2000년대 ({n})' },
+  'offline.preset.latino': { de: 'Latino ({n})', en: 'Latino ({n})', ko: '라티노 ({n})' },
 
   'result.search': { de: 'Auf Spotify suchen', en: 'Search on Spotify', ko: 'Spotify에서 검색' },
   'convert.textareaLabel': { de: 'Songliste', en: 'Song list', ko: '노래 목록' },
