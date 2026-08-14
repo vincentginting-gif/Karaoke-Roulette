@@ -222,12 +222,14 @@ export const translations: Record<string, Entry> = {
   'offline.namePlaceholder': { de: 'Karaoke-Party', en: 'Karaoke party', ko: '노래방 파티' },
   'offline.defaultName': { de: 'Karaoke-Party', en: 'Karaoke party', ko: '노래방 파티' },
   'offline.start': { de: 'Los spinnen', en: 'Start spinning', ko: '돌리기 시작' },
-  'offline.top100': { de: 'Top-{n} laden', en: 'Load top {n}', ko: '인기 {n}곡 불러오기' },
-  'offline.top100Intro': {
-    de: 'Keine Idee? Lade die {n} beliebtesten Karaoke-Songs:',
-    en: 'No idea? Load the {n} most popular karaoke songs:',
-    ko: '아이디어가 없나요? 인기 카라오케 {n}곡을 불러오세요:',
+  'offline.presetsIntro': {
+    de: 'Keine Idee? Fertige Listen laden (anhängbar):',
+    en: 'No idea? Load ready-made lists (stackable):',
+    ko: '아이디어가 없나요? 준비된 목록 불러오기 (추가 가능):',
   },
+  'offline.preset.top100': { de: 'Top {n} International', en: 'Top {n} International', ko: '인기 {n} 인터내셔널' },
+  'offline.preset.de': { de: 'Deutsche Hits ({n})', en: 'German hits ({n})', ko: '독일 히트 ({n})' },
+  'offline.preset.kpop': { de: 'K-Pop ({n})', en: 'K-Pop ({n})', ko: 'K-팝 ({n})' },
 
   'result.search': { de: 'Auf Spotify suchen', en: 'Search on Spotify', ko: 'Spotify에서 검색' },
   'convert.textareaLabel': { de: 'Songliste', en: 'Song list', ko: '노래 목록' },

@@ -2410,3 +2410,17 @@ code {
   line-height: 1.5;
   text-align: center;
 }
+
+/* Offline-Modus – Preset-Buttons (fertige Listen) */
+.offline-presets {
+  flex-wrap: wrap;
+}
+.offline-preset-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.offline-preset-btns .btn {
+  padding: 9px 15px;
+  font-size: 0.9rem;
+}
