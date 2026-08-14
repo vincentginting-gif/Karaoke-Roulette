@@ -455,9 +455,9 @@ export const translations: Record<string, Entry> = {
 
   // ── Songs verwalten ──
   'sm.hint': {
-    de: 'Tippe auf einen Song, um ihn aus dem Pool zu nehmen (oder zurückzuholen). Entfernte Songs werden beim Roulette nicht mehr gezogen – deine Spotify-Playlist bleibt unberührt.',
-    en: 'Tap a song to remove it from the pool (or bring it back). Removed songs are no longer drawn in the roulette – your Spotify playlist stays untouched.',
-    ko: '노래를 탭하면 풀에서 제외(또는 복구)됩니다. 제외된 노래는 룰렛에서 뽑히지 않으며 Spotify 플레이리스트는 그대로 유지됩니다.',
+    de: 'Tippe auf einen Song, um ihn aus dem Pool zu nehmen (oder zurückzuholen). Entfernte Songs werden beim Roulette nicht mehr gezogen.',
+    en: 'Tap a song to remove it from the pool (or bring it back). Removed songs are no longer drawn in the roulette.',
+    ko: '노래를 탭하면 풀에서 제외(또는 복구)됩니다. 제외된 노래는 룰렛에서 뽑히지 않습니다.',
   },
   'sm.search': { de: 'In dieser Playlist suchen…', en: 'Search this playlist…', ko: '이 플레이리스트 검색…' },
   'sm.sort': { de: 'Sortieren', en: 'Sort', ko: '정렬' },

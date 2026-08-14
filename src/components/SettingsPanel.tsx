@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n/i18n'
-import { ExternalIcon, MusicNoteIcon, SpotifyIcon, TrashIcon, UndoIcon } from './icons'
+import { ExternalIcon, MusicNoteIcon, SpotifyIcon, UndoIcon } from './icons'
 import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface SettingsPanelProps {
@@ -9,8 +9,6 @@ interface SettingsPanelProps {
   onToggleSurprise: () => void
   drawnCount: number
   onReset: () => void
-  excludedCount: number
-  onManageSongs: () => void
   isGuest: boolean
   canExportGuest: boolean
   onExportGuest: () => void
@@ -52,8 +50,6 @@ export function SettingsPanel({
   onToggleSurprise,
   drawnCount,
   onReset,
-  excludedCount,
-  onManageSongs,
   isGuest,
   canExportGuest,
   onExportGuest,
@@ -99,18 +95,6 @@ export function SettingsPanel({
                 {drawnCount > 0
                   ? t('settings.resetHint', { n: drawnCount })
                   : t('settings.resetHintNone')}
-              </span>
-            </span>
-          </button>
-
-          <button className="setting-action" onClick={onManageSongs}>
-            <TrashIcon className="setting-action-icon" />
-            <span className="setting-text">
-              <span className="setting-label">{t('settings.manage')}</span>
-              <span className="setting-hint">
-                {excludedCount > 0
-                  ? t('settings.manageHintCount', { n: excludedCount })
-                  : t('settings.manageHint')}
               </span>
             </span>
           </button>

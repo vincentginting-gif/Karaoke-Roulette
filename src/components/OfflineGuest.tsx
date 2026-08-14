@@ -6,25 +6,19 @@ import { Logo } from './Logo'
 import { DiceIcon } from './icons'
 
 interface OfflineGuestProps {
-  /** Startet das Roulette mit den (fertigen oder eingetippten) Songs. */
+  /** Startet das Roulette mit einer fertigen Playlist. */
   onStart: (name: string, lines: ParsedLine[]) => void
-  onCancel: () => void
+  /** Zur „Eigene Liste"-Eingabe wechseln. */
+  onCustom: () => void
 }
 
 /**
- * Offline-Gäste-Modus (der Hauptweg). Zeigt fertige Karaoke-Playlists als
- * gemütliche, sortierte Karten – ein Klick startet die Playlist. Über
- * „Eigene Liste" lassen sich Songs auch selbst eintippen.
+ * Offline-Auswahl (der Hauptweg). Zeigt fertige Karaoke-Playlists als
+ * gemütliche, sortierte Karten – ein Klick startet die Playlist. Der
+ * Zurück-Weg läuft über den globalen Header-Button.
  */
-export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
+export function OfflineGuest({ onStart, onCustom }: OfflineGuestProps) {
   const { t } = useI18n()
-  const [mode, setMode] = useState<'list' | 'custom'>('list')
-
-  if (mode === 'custom') {
-    return <CustomForm onStart={onStart} onBack={() => setMode('list')} />
-  }
-
-  // ── Auswahl der fertigen Playlists ──
   return (
     <section className="stage fade-in offline-home">
       <header className="offline-header">
@@ -35,9 +29,6 @@ export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
           <h2 className="offline-heading">{t('offline.title')}</h2>
           <p className="offline-subheading">{t('offline.pickHint')}</p>
         </div>
-        <button className="btn btn-ghost offline-back" onClick={onCancel}>
-          {t('common.back')}
-        </button>
       </header>
 
       <h3 className="offline-section">{t('offline.sectionReady')}</h3>
@@ -66,7 +57,7 @@ export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
       </ul>
 
       <h3 className="offline-section">{t('offline.sectionOwn')}</h3>
-      <button className="offline-custom-card" onClick={() => setMode('custom')}>
+      <button className="offline-custom-card" onClick={onCustom}>
         <span className="offline-custom-icon" aria-hidden="true">
           ✏️
         </span>
@@ -82,14 +73,13 @@ export function OfflineGuest({ onStart, onCancel }: OfflineGuestProps) {
   )
 }
 
-// ── Formular für eine selbst eingetippte Liste ───────────────
+// ── Eigene Liste eintippen (separater View; Zurück über Header) ──
 
-interface CustomFormProps {
+interface OfflineCustomProps {
   onStart: (name: string, lines: ParsedLine[]) => void
-  onBack: () => void
 }
 
-function CustomForm({ onStart, onBack }: CustomFormProps) {
+export function OfflineCustom({ onStart }: OfflineCustomProps) {
   const { t } = useI18n()
   const [text, setText] = useState('')
   const [name, setName] = useState('')
@@ -104,9 +94,6 @@ function CustomForm({ onStart, onBack }: CustomFormProps) {
           <h2 className="picker-title">{t('offline.custom.title')}</h2>
           <p className="picker-subtitle">{t('offline.subtitle')}</p>
         </div>
-        <button className="btn btn-ghost" onClick={onBack}>
-          {t('common.back')}
-        </button>
       </header>
 
       <div className="conv-input">

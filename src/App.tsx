@@ -49,7 +49,7 @@ import { SongManager } from './components/SongManager'
 import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
 import { PlaylistConverter } from './components/PlaylistConverter'
-import { OfflineGuest } from './components/OfflineGuest'
+import { OfflineGuest, OfflineCustom } from './components/OfflineGuest'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
 import { useI18n } from './i18n/i18n'
@@ -62,6 +62,7 @@ type View =
   | 'album'
   | 'convert'
   | 'offline'
+  | 'offline-custom'
   | 'roulette'
   | 'result'
   | 'manage'
@@ -237,6 +238,12 @@ export function App() {
     const firstCover = pool.find((tk) => tk.coverUrl)?.coverUrl ?? null
     return firstCover ? { ...activePlaylist, imageUrl: firstCover } : activePlaylist
   }, [activePlaylist, pool])
+
+  // Alle Tracks inkl. nachgeladener Cover (für die Song-Verwaltung).
+  const tracksWithCovers = useMemo(
+    () => tracks.map((t) => (coverMap[t.id] ? { ...t, coverUrl: coverMap[t.id] } : t)),
+    [tracks, coverMap],
+  )
 
   const showError = useCallback((msg: string) => setError(msg), [])
 
@@ -674,9 +681,9 @@ export function App() {
   // ── Rendering ──────────────────────────────────────────────
 
   // Fehlende Client-ID nur melden, wenn es auch keinen Gast-/Offline-Weg gibt.
-  if (!isConfigured() && !isGuest && !guestName && view !== 'offline') {
+  if (!isConfigured() && !isGuest && !guestName && view !== 'offline' && view !== 'offline-custom') {
     return (
-      <Shell connected={false}>
+      <Shell>
         <ConfigNeeded />
       </Shell>
     )
@@ -690,7 +697,9 @@ export function App() {
 
   if (view === 'offline') {
     // Offline-Modus: unabhängig vom Login-Status erreichbar.
-    content = <OfflineGuest onStart={startOffline} onCancel={() => setView('home')} />
+    content = <OfflineGuest onStart={startOffline} onCustom={() => setView('offline-custom')} />
+  } else if (view === 'offline-custom') {
+    content = <OfflineCustom onStart={startOffline} />
   } else if (auth.status === 'checking' && !isGuest) {
     content = <Spinner label={t('app.checking')} />
   } else if (auth.status === 'disconnected' && !isGuest) {
@@ -771,11 +780,10 @@ export function App() {
   } else if (view === 'manage' && activePlaylist) {
     content = (
       <SongManager
-        playlist={activePlaylist}
-        tracks={tracks}
+        playlist={homePlaylist ?? activePlaylist}
+        tracks={tracksWithCovers}
         excludedIds={excludedIds}
         onToggleExclude={toggleExclude}
-        onBack={() => setView('home')}
       />
     )
   } else if (!activePlaylist) {
@@ -826,7 +834,6 @@ export function App() {
       <Home
         playlist={homePlaylist ?? activePlaylist}
         onSpin={spin}
-        onChangePlaylist={changeSource}
         onManageSongs={() => setView('manage')}
         onReset={resetDrawn}
         remaining={remaining}
@@ -837,10 +844,17 @@ export function App() {
 
   const showSettingsButton = Boolean(activePlaylist) && (auth.status === 'connected' || isGuest)
 
+  // Zurück-Button (oben rechts) je nach Ansicht.
+  let onBack: (() => void) | undefined
+  if (view === 'home' && activePlaylist) onBack = changeSource
+  else if (view === 'offline') onBack = () => setView('home')
+  else if (view === 'offline-custom') onBack = () => setView('offline')
+  else if (view === 'manage') onBack = () => setView('home')
+
   return (
     <Shell
-      connected={auth.status === 'connected'}
       onOpenSettings={showSettingsButton ? () => setSettingsOpen(true) : undefined}
+      onBack={onBack}
     >
       {content}
       {error && <ErrorToast message={error} onDismiss={() => setError(null)} />}
@@ -852,11 +866,6 @@ export function App() {
           onToggleSurprise={toggleSurprise}
           drawnCount={drawnInPool}
           onReset={resetDrawn}
-          excludedCount={excludedIds.size}
-          onManageSongs={() => {
-            setSettingsOpen(false)
-            setView('manage')
-          }}
           isGuest={isGuest}
           canExportGuest={!isGuest && tracks.length > 0}
           onExportGuest={() => {
@@ -882,19 +891,21 @@ export function App() {
 
 interface ShellProps {
   children: React.ReactNode
-  connected: boolean
   onOpenSettings?: () => void
+  /** Zurück-Aktion (oben rechts). Kein Button, wenn nicht gesetzt. */
+  onBack?: () => void
 }
 
-function Shell({ children, connected, onOpenSettings }: ShellProps) {
+function Shell({ children, onOpenSettings, onBack }: ShellProps) {
   const { t } = useI18n()
   return (
     <div className="app">
       <div className="bg-glow" aria-hidden="true" />
       <header className="app-header">
-        <div className="app-header-actions">
+        {/* Links: Sprache + Einstellungen */}
+        <div className="app-header-left">
           <LanguageSwitcher className="lang-switch-header" />
-          {connected && onOpenSettings && (
+          {onOpenSettings && (
             <button
               className="icon-btn"
               onClick={onOpenSettings}
@@ -902,6 +913,14 @@ function Shell({ children, connected, onOpenSettings }: ShellProps) {
               aria-label={t('settings.title')}
             >
               <GearIcon className="icon-btn-svg" />
+            </button>
+          )}
+        </div>
+        {/* Rechts: Zurück */}
+        <div className="app-header-right">
+          {onBack && (
+            <button className="btn btn-ghost header-back" onClick={onBack}>
+              ← {t('common.back')}
             </button>
           )}
         </div>

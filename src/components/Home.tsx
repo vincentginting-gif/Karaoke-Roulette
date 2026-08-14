@@ -2,23 +2,21 @@ import type { Playlist } from '../spotify/types'
 import { useI18n } from '../i18n/i18n'
 import { AlbumCover } from './AlbumCover'
 import { Logo } from './Logo'
-import { DiceIcon, TrashIcon, UndoIcon } from './icons'
+import { DiceIcon, UndoIcon } from './icons'
 
 interface HomeProps {
   playlist: Playlist
   onSpin: () => void
-  onChangePlaylist: () => void
   onManageSongs: () => void
   onReset: () => void
   remaining: number
   total: number
 }
 
-/** Startseite nach Verbindung + Playlist-Auswahl: der große Button. */
+/** Startseite nach Playlist-Auswahl: der große Spin-Button. */
 export function Home({
   playlist,
   onSpin,
-  onChangePlaylist,
   onManageSongs,
   onReset,
   remaining,
@@ -49,16 +47,6 @@ export function Home({
         <DiceIcon className="btn-icon" />
         {t('home.spin')}
       </button>
-
-      <div className="home-actions">
-        <button className="btn btn-ghost" onClick={onChangePlaylist}>
-          🔀 {t('home.changePlaylist')}
-        </button>
-        <button className="btn btn-ghost" onClick={onManageSongs}>
-          <TrashIcon className="btn-icon" />
-          {t('home.manageSongs')}
-        </button>
-      </div>
 
       <p className="remaining-hint">
         {total > 0 &&

@@ -9,7 +9,6 @@ interface SongManagerProps {
   tracks: Track[]
   excludedIds: Set<string>
   onToggleExclude: (trackId: string) => void
-  onBack: () => void
 }
 
 type SortKey = 'playlist' | 'title' | 'artist' | 'album' | 'duration' | 'pool'
@@ -46,7 +45,6 @@ export function SongManager({
   tracks,
   excludedIds,
   onToggleExclude,
-  onBack,
 }: SongManagerProps) {
   const { t } = useI18n()
   const activeCount = tracks.length - excludedIds.size
@@ -95,10 +93,6 @@ export function SongManager({
 
   return (
     <section className="stage sp-view fade-in">
-      <button className="btn btn-ghost sp-back" onClick={onBack}>
-        ← {t('common.done')}
-      </button>
-
       <header className="sp-header">
         <div className="sp-cover-wrap">
           <AlbumCover url={playlist.imageUrl} alt={playlist.name} className="sp-cover" />
