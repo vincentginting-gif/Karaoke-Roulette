@@ -21,9 +21,9 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
   // dann wird „Öffnen" zur Spotify-Suche und die Cross-Plattform-Links entfallen.
   const isRealTrack = /^[A-Za-z0-9]{22}$/.test(track.id)
 
-  // Offline-Songs zeigen einen Quadranten-Platzhalter -> echtes Cover
-  // (iTunes) nachladen, damit der Gewinner ein passendes Cover hat.
-  const isPlaceholder = (track.coverUrl ?? '').startsWith('quad:')
+  // Offline-Songs haben kein eigenes Cover -> echtes Cover (iTunes)
+  // nachladen, damit der Gewinner ein passendes Cover hat.
+  const isPlaceholder = !track.coverUrl || track.coverUrl.startsWith('quad:')
   const [cover, setCover] = useState<string | null>(
     isPlaceholder ? cachedCover(track.title, track.artist) ?? track.coverUrl : track.coverUrl,
   )

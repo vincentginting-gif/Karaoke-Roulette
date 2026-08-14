@@ -71,9 +71,6 @@ const ARTIST_PREFIX = 'artist:'
 const ALBUM_PREFIX = 'album:'
 const CONVERT_PREFIX = 'convert:'
 const CONVERT_TRACKS_KEY = 'kr.convert.tracks'
-// Standard-Cover-Bild (2x2) für den Offline-Modus. Der Nutzer kann die Datei
-// public/guest-cover.jpg durch ein eigenes 2x2-Bild ersetzen.
-const OFFLINE_COVER_SRC = `${import.meta.env.BASE_URL}guest-cover.jpg`
 
 const ARTIST_SUGGESTIONS = [
   'Taylor Swift',
@@ -231,10 +228,10 @@ export function App() {
   const showError = useCallback((msg: string) => setError(msg), [])
 
   // ── Album-Cover (iTunes) für Offline-Songs nachladen ──
-  // Für alle Tracks mit Quadranten-Platzhalter, die noch kein Cover haben.
+  // Offline-Songs (id "offline-…") haben kein eigenes Cover -> nachladen.
   useEffect(() => {
     const needing = tracks.filter(
-      (t) => (t.coverUrl ?? '').startsWith('quad:') && !coverMap[t.id],
+      (t) => t.id.startsWith('offline-') && !t.coverUrl && !coverMap[t.id],
     )
     if (needing.length === 0) return
     let cancelled = false
@@ -462,8 +459,9 @@ export function App() {
       id: `offline-${i}-${p.title}`,
       title: p.title,
       artist: p.artist || '—',
-      // Cover = zufälliger Quadrant des geteilten Bildes.
-      coverUrl: `quad:${Math.floor(Math.random() * 4)}:${OFFLINE_COVER_SRC}`,
+      // Kein Platzhalter-Cover – bis das echte Cover (iTunes) geladen ist,
+      // zeigt AlbumCover den neutralen Musiknoten-Fallback.
+      coverUrl: null,
       // Kein echter Track: „Öffnen" wird zur Spotify-Suche (funktioniert ohne Login).
       spotifyUrl: `https://open.spotify.com/search/${encodeURIComponent(
         `${p.title} ${p.artist}`.trim(),
