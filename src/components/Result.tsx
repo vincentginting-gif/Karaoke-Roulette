@@ -6,14 +6,25 @@ import { cachedCover, fetchCover } from '../spotify/itunes'
 import { AlbumCover } from './AlbumCover'
 import { DiceIcon, ExternalIcon } from './icons'
 
+interface PartyResult {
+  /** Name der Person, die jetzt singt. */
+  singer: string
+  /** Darf dieses Gerät weitergeben (ist der/die Sänger:in dran)? */
+  canNext: boolean
+  /** Turn an die nächste Person übergeben. */
+  onNext: () => void
+}
+
 interface ResultProps {
   track: Track
   onAgain: () => void
   onChangePlaylist: () => void
+  /** Party-Modus: Sänger:in anzeigen + „Nächster"-Button statt „nochmal". */
+  party?: PartyResult
 }
 
 /** Ergebnisbereich – prominente Präsentation des Gewinner-Songs. */
-export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
+export function Result({ track, onAgain, onChangePlaylist, party }: ResultProps) {
   const { t } = useI18n()
   const [links, setLinks] = useState<PlatformLink[]>([])
 
@@ -64,7 +75,9 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
 
   return (
     <section className="stage stage-center result result-in">
-      <p className="result-kicker">{t('result.kicker')}</p>
+      <p className="result-kicker">
+        {party ? t('party.sings', { name: party.singer }) : t('result.kicker')}
+      </p>
 
       <div className="result-cover-wrap glow-strong">
         <AlbumCover url={cover} alt={`${track.title} – ${track.artist}`} className="result-cover" />
@@ -84,10 +97,21 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
           <ExternalIcon className="btn-icon" />
           {isRealTrack ? t('result.open') : t('result.search')}
         </a>
-        <button className="btn btn-primary" onClick={onAgain}>
-          <DiceIcon className="btn-icon" />
-          {t('result.again')}
-        </button>
+        {party ? (
+          party.canNext ? (
+            <button className="btn btn-primary" onClick={party.onNext}>
+              <DiceIcon className="btn-icon" />
+              {t('party.next')}
+            </button>
+          ) : (
+            <span className="result-wait">{t('party.waitNext', { name: party.singer })}</span>
+          )
+        ) : (
+          <button className="btn btn-primary" onClick={onAgain}>
+            <DiceIcon className="btn-icon" />
+            {t('result.again')}
+          </button>
+        )}
       </div>
 
       {isRealTrack && (
@@ -118,9 +142,11 @@ export function Result({ track, onAgain, onChangePlaylist }: ResultProps) {
         </div>
       )}
 
-      <button className="btn btn-ghost result-switch" onClick={onChangePlaylist}>
-        🔀 {t('result.switch')}
-      </button>
+      {!party && (
+        <button className="btn btn-ghost result-switch" onClick={onChangePlaylist}>
+          🔀 {t('result.switch')}
+        </button>
+      )}
     </section>
   )
 }

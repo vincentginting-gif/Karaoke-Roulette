@@ -22,6 +22,13 @@ interface OfflineGuestProps {
   onExport: () => void
   /** Playlists aus einer Datei wiederherstellen. */
   onImportFile: (file: File) => void
+  /** Party-Server verfügbar? (sonst Party-Leiste ausblenden) */
+  partyEnabled: boolean
+  /** Gerade eine Playlist für die Party auswählen? */
+  partyPick: boolean
+  onStartParty: () => void
+  onCancelParty: () => void
+  onJoinParty: () => void
 }
 
 /**
@@ -39,6 +46,11 @@ export function OfflineGuest({
   onShareUser,
   onExport,
   onImportFile,
+  partyEnabled,
+  partyPick,
+  onStartParty,
+  onCancelParty,
+  onJoinParty,
 }: OfflineGuestProps) {
   const { t } = useI18n()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -55,19 +67,44 @@ export function OfflineGuest({
         </div>
       </header>
 
+      {/* Party-Leiste (nur wenn der Party-Server eingerichtet ist) */}
+      {partyEnabled &&
+        (partyPick ? (
+          <div className="party-bar party-bar-pick">
+            <span className="party-bar-text">🎉 {t('party.pickPlaylist')}</span>
+            <button className="offline-link-btn" onClick={onCancelParty}>
+              {t('party.cancel')}
+            </button>
+          </div>
+        ) : (
+          <div className="party-bar">
+            <span className="party-bar-text">🎉 {t('party.barTitle')}</span>
+            <div className="party-bar-actions">
+              <button className="btn btn-primary party-bar-btn" onClick={onStartParty}>
+                {t('party.start')}
+              </button>
+              <button className="offline-link-btn" onClick={onJoinParty}>
+                {t('party.join')}
+              </button>
+            </div>
+          </div>
+        ))}
+
       {/* Eigene Playlists + Erstellen */}
       <div className="offline-section-row">
         <h3 className="offline-section">{t('offline.sectionMine')}</h3>
-        <div className="offline-section-tools">
-          {userPlaylists.length > 0 && (
-            <button className="offline-link-btn" onClick={onExport}>
-              ⬇️ {t('offline.export')}
+        {!partyPick && (
+          <div className="offline-section-tools">
+            {userPlaylists.length > 0 && (
+              <button className="offline-link-btn" onClick={onExport}>
+                ⬇️ {t('offline.export')}
+              </button>
+            )}
+            <button className="offline-link-btn" onClick={() => fileRef.current?.click()}>
+              ⬆️ {t('offline.import')}
             </button>
-          )}
-          <button className="offline-link-btn" onClick={() => fileRef.current?.click()}>
-            ⬆️ {t('offline.import')}
-          </button>
-        </div>
+          </div>
+        )}
       </div>
       <input
         ref={fileRef}
@@ -81,17 +118,19 @@ export function OfflineGuest({
         }}
       />
       <ul className="offline-grid">
-        <li>
-          <button className="offline-card offline-card-create" onClick={onNew}>
-            <div className="offline-cover offline-cover-custom">
-              <span className="offline-cover-emoji">＋</span>
-            </div>
-            <div className="offline-card-info">
-              <span className="offline-card-name">{t('offline.newList')}</span>
-              <span className="offline-card-desc">{t('offline.custom.hint')}</span>
-            </div>
-          </button>
-        </li>
+        {!partyPick && (
+          <li>
+            <button className="offline-card offline-card-create" onClick={onNew}>
+              <div className="offline-cover offline-cover-custom">
+                <span className="offline-cover-emoji">＋</span>
+              </div>
+              <div className="offline-card-info">
+                <span className="offline-card-name">{t('offline.newList')}</span>
+                <span className="offline-card-desc">{t('offline.custom.hint')}</span>
+              </div>
+            </button>
+          </li>
+        )}
 
         {userPlaylists.map((pl) => (
           <li key={pl.id}>
@@ -108,7 +147,7 @@ export function OfflineGuest({
                   </span>
                 </div>
               </button>
-              <div className="offline-card-tools">
+              <div className="offline-card-tools" hidden={partyPick}>
                 <button
                   className="offline-tool"
                   onClick={() => onShareUser(pl)}

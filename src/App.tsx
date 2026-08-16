@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { isConfigured } from './spotify/auth'
 import {
@@ -62,6 +62,9 @@ import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
 import { PlaylistConverter } from './components/PlaylistConverter'
 import { OfflineGuest, OfflineCustom } from './components/OfflineGuest'
+import { PartyLobby, PartyJoin } from './components/PartyLobby'
+import { useParty } from './party/useParty'
+import { partyHealth, toLocalTime } from './party/partyClient'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
 import { useI18n } from './i18n/i18n'
@@ -75,6 +78,8 @@ type View =
   | 'convert'
   | 'offline'
   | 'offline-custom'
+  | 'party-lobby'
+  | 'party-join'
   | 'roulette'
   | 'result'
   | 'manage'
@@ -143,6 +148,19 @@ function makeConvertPlaylist(name: string, count: number): Playlist {
   }
 }
 
+/** Baut Offline-Tracks (ohne Cover) aus geparsten Zeilen – für Offline & Party. */
+function buildOfflineTracks(lines: ParsedLine[]): Track[] {
+  return lines.map((p, i) => ({
+    id: `offline-${i}-${p.title}`,
+    title: p.title,
+    artist: p.artist || '—',
+    coverUrl: null,
+    spotifyUrl: `https://open.spotify.com/search/${encodeURIComponent(`${p.title} ${p.artist}`.trim())}`,
+    album: '',
+    durationMs: 0,
+  }))
+}
+
 /** Baut die synthetische "Playlist" für den Gast-Modus. */
 function makeGuestPlaylist(name: string): Playlist {
   return {
@@ -193,6 +211,14 @@ export function App() {
   // Eigene, gespeicherte Offline-Playlists
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>(() => loadUserPlaylists())
   const [editingPlaylist, setEditingPlaylist] = useState<UserPlaylist | null>(null)
+
+  // Party-Modus (live, mehrere Geräte)
+  const [partyMode, setPartyMode] = useState(false)
+  const [partyPick, setPartyPick] = useState(false) // Playlist für die Party wählen
+  const [partyEnabled, setPartyEnabled] = useState(false) // Server eingerichtet?
+  const [partyJoinError, setPartyJoinError] = useState<string | null>(null)
+  const [partyBusy, setPartyBusy] = useState(false)
+  const [winnerRarity, setWinnerRarity] = useState<string | null>(null) // Party: synchrone Rarity
 
   // Playlists (nur bei Bedarf geladen)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -510,20 +536,7 @@ export function App() {
 
   // ── Offline-Modus: eingetippte Songs -> Roulette (kein Spotify) ──
   const startOffline = useCallback((name: string, lines: ParsedLine[]) => {
-    const trks: Track[] = lines.map((p, i) => ({
-      id: `offline-${i}-${p.title}`,
-      title: p.title,
-      artist: p.artist || '—',
-      // Kein Platzhalter-Cover – bis das echte Cover (iTunes) geladen ist,
-      // zeigt AlbumCover den neutralen Musiknoten-Fallback.
-      coverUrl: null,
-      // Kein echter Track: „Öffnen" wird zur Spotify-Suche (funktioniert ohne Login).
-      spotifyUrl: `https://open.spotify.com/search/${encodeURIComponent(
-        `${p.title} ${p.artist}`.trim(),
-      )}`,
-      album: '',
-      durationMs: 0,
-    }))
+    const trks: Track[] = buildOfflineTracks(lines)
     setConvertedTracks(trks)
     try {
       localStorage.setItem(CONVERT_TRACKS_KEY, JSON.stringify(trks))
@@ -805,10 +818,181 @@ export function App() {
     })
   }, [])
 
+  // ── Party-Modus (live, mehrere Geräte) ─────────────────────
+  const consumedSeqRef = useRef(0) // letzter verarbeiteter Spin (event.seq)
+  const prevTurnIndexRef = useRef<number | null>(null)
+  const spinTimerRef = useRef<number | null>(null)
+
+  const party = useParty({
+    onError: () => {
+      setPartyMode(false)
+      setView('offline')
+      showError(t('party.err.gone'))
+    },
+  })
+
+  // Server eingerichtet? (Feature-Flag – Party-Buttons nur dann zeigen)
+  useEffect(() => {
+    let cancelled = false
+    void partyHealth().then((ok) => {
+      if (!cancelled) setPartyEnabled(ok)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  // Songs (vom Server) als spielbare Tracks bereitstellen.
+  const mountPartyTracks = useCallback((name: string, songs: string[]) => {
+    const trks = buildOfflineTracks(parseList(songs.join('\n'), false))
+    setConvertedTracks(trks)
+    const pl = makeConvertPlaylist(name || 'Party', trks.length)
+    setActivePlaylist(pl)
+    saveActivePlaylist(pl)
+    setIsGuest(true)
+    setDrawnIds(new Set())
+    setExcludedIds(new Set())
+    setLastWinnerId(null)
+  }, [])
+
+  const createParty = useCallback(
+    async (name: string, songs: string[]) => {
+      if (!partyEnabled) {
+        showError(t('party.err.disabled'))
+        return
+      }
+      setPartyBusy(true)
+      try {
+        mountPartyTracks(name, songs)
+        await party.create({ name: name || 'Party', songs, order: 'manual', noRepeat: true, initialNames: [] })
+        consumedSeqRef.current = 0
+        prevTurnIndexRef.current = null
+        setPartyMode(true)
+        setPartyPick(false)
+        setView('party-lobby')
+      } catch {
+        showError(t('party.err.create'))
+      } finally {
+        setPartyBusy(false)
+      }
+    },
+    [partyEnabled, party, mountPartyTracks, showError, t],
+  )
+
+  const joinParty = useCallback(
+    async (code: string) => {
+      setPartyBusy(true)
+      setPartyJoinError(null)
+      try {
+        const state = await party.join(code)
+        mountPartyTracks(state.meta.name, state.meta.songs)
+        consumedSeqRef.current = state.event?.seq ?? 0
+        prevTurnIndexRef.current = state.turnIndex
+        setPartyMode(true)
+        setView('party-lobby')
+      } catch (e) {
+        const c = (e as { code?: string }).code
+        setPartyJoinError(c === 'room_not_found' ? t('party.err.notFound') : t('party.err.join'))
+      } finally {
+        setPartyBusy(false)
+      }
+    },
+    [party, mountPartyTracks, t],
+  )
+
+  const leaveParty = useCallback(() => {
+    if (spinTimerRef.current) window.clearTimeout(spinTimerRef.current)
+    party.leave()
+    setPartyMode(false)
+    setPartyPick(false)
+    setView('offline')
+  }, [party])
+
+  const copyPartyLink = useCallback(async () => {
+    const code = party.session?.code
+    if (!code) return
+    const link = `${location.origin}${location.pathname}#party=${code}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setNotice(t('party.linkCopied'))
+    } catch {
+      window.prompt(t('party.copyLink'), link)
+    }
+  }, [party.session?.code, t])
+
+  // Playlist für die Party wählen (Klick auf eine Playlist -> Raum erstellen).
+  const handleOfflineStart = useCallback(
+    (name: string, lines: ParsedLine[]) => {
+      if (partyPick) createParty(name, lines.map((p) => (p.artist ? `${p.title} - ${p.artist}` : p.title)))
+      else startOffline(name, lines)
+    },
+    [partyPick, createParty, startOffline],
+  )
+  const handleUserStart = useCallback(
+    (pl: UserPlaylist) => {
+      if (partyPick) createParty(pl.name, pl.songs)
+      else startUserPlaylist(pl)
+    },
+    [partyPick, createParty, startUserPlaylist],
+  )
+
+  // Neuer Spin vom Server -> Animation (synchron über event.startAt) auslösen.
+  useEffect(() => {
+    const ev = party.state?.event
+    if (!partyMode || !ev) return
+    if (ev.seq <= consumedSeqRef.current) return
+    const winnerTrack = pool[ev.winnerIndex]
+    if (!winnerTrack) return // Pool noch nicht bereit -> nächster Effektlauf
+    consumedSeqRef.current = ev.seq
+    setWinner(winnerTrack)
+    setStrip(buildStrip(pool, winnerTrack))
+    setWinnerRarity(ev.rarity)
+    const delay = Math.max(0, toLocalTime(ev.startAt) - Date.now())
+    if (spinTimerRef.current) window.clearTimeout(spinTimerRef.current)
+    spinTimerRef.current = window.setTimeout(() => setView('roulette'), delay)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [party.state?.event?.seq, partyMode, pool])
+
+  // Turn weitergegeben -> zurück in die Lobby (aus dem Ergebnis).
+  useEffect(() => {
+    if (!partyMode) return
+    const ti = party.state?.turnIndex
+    if (ti == null) return
+    if (prevTurnIndexRef.current == null) {
+      prevTurnIndexRef.current = ti
+      return
+    }
+    if (ti !== prevTurnIndexRef.current) {
+      prevTurnIndexRef.current = ti
+      setView((v) => (v === 'result' ? 'party-lobby' : v))
+    }
+  }, [party.state?.turnIndex, partyMode])
+
+  // Geteilten Party-Link öffnen (#party=CODE) -> automatisch beitreten.
+  useEffect(() => {
+    const m = /[#&]party=([A-Za-z0-9]{4,8})/.exec(window.location.hash)
+    if (!m) return
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    void joinParty(m[1].toUpperCase())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Abgeleitete Party-Infos.
+  const partyCurrent = party.state ? party.state.players[party.state.turnIndex] : undefined
+  const isMyTurn = Boolean(partyCurrent && partyCurrent.ownerDeviceId === party.deviceId)
+
   // ── Rendering ──────────────────────────────────────────────
 
   // Fehlende Client-ID nur melden, wenn es auch keinen Gast-/Offline-Weg gibt.
-  if (!isConfigured() && !isGuest && !guestName && view !== 'offline' && view !== 'offline-custom') {
+  if (
+    !isConfigured() &&
+    !isGuest &&
+    !guestName &&
+    view !== 'offline' &&
+    view !== 'offline-custom' &&
+    view !== 'party-lobby' &&
+    view !== 'party-join'
+  ) {
     return (
       <Shell>
         <ConfigNeeded />
@@ -826,19 +1010,46 @@ export function App() {
     // Offline-Modus: unabhängig vom Login-Status erreichbar.
     content = (
       <OfflineGuest
-        onStart={startOffline}
+        onStart={handleOfflineStart}
         onNew={openNewCustom}
         userPlaylists={userPlaylists}
-        onStartUser={startUserPlaylist}
+        onStartUser={handleUserStart}
         onEditUser={openEditCustom}
         onDeleteUser={removeUserPlaylist}
         onShareUser={shareUser}
         onExport={exportUserPlaylists}
         onImportFile={importUserPlaylistsFromFile}
+        partyEnabled={partyEnabled}
+        partyPick={partyPick}
+        onStartParty={() => setPartyPick(true)}
+        onCancelParty={() => setPartyPick(false)}
+        onJoinParty={() => {
+          setPartyJoinError(null)
+          setView('party-join')
+        }}
       />
     )
   } else if (view === 'offline-custom') {
     content = <OfflineCustom initial={editingPlaylist} onSave={saveCustom} />
+  } else if (view === 'party-join') {
+    content = <PartyJoin onJoin={joinParty} error={partyJoinError} busy={partyBusy} />
+  } else if (view === 'party-lobby' && party.state) {
+    content = (
+      <PartyLobby
+        state={party.state}
+        deviceId={party.deviceId}
+        isHost={party.isHost}
+        isMyTurn={isMyTurn}
+        ready={pool.length > 0}
+        onAddName={party.addName}
+        onRemoveName={party.removeName}
+        onSetOrder={party.setOrder}
+        onSetNoRepeat={party.setNoRepeat}
+        onSpin={party.spin}
+        onCopyLink={copyPartyLink}
+        onLeave={leaveParty}
+      />
+    )
   } else if (auth.status === 'checking' && !isGuest) {
     content = <Spinner label={t('app.checking')} />
   } else if (auth.status === 'disconnected' && !isGuest) {
@@ -937,12 +1148,26 @@ export function App() {
         winnerIndex={WINNER_INDEX}
         soundEnabled={soundEnabled}
         surprise={surpriseMode}
+        rarity={partyMode ? winnerRarity : null}
         onComplete={onRouletteComplete}
       />
     )
   } else if (view === 'result' && winner) {
     content = (
-      <Result track={winner} onAgain={spin} onChangePlaylist={changeSource} />
+      <Result
+        track={winner}
+        onAgain={spin}
+        onChangePlaylist={changeSource}
+        party={
+          partyMode && party.state
+            ? {
+                singer: party.state.event?.singer ?? '—',
+                canNext: isMyTurn,
+                onNext: party.next,
+              }
+            : undefined
+        }
+      />
     )
   } else if (preparingCovers) {
     // Kurzer „Cover werden geladen…"-Moment vor dem ersten Spin.
@@ -988,6 +1213,8 @@ export function App() {
   if (view === 'home' && activePlaylist) onBack = changeSource
   else if (view === 'offline') onBack = () => setView('home')
   else if (view === 'offline-custom') onBack = () => setView('offline')
+  else if (view === 'party-join') onBack = () => setView('offline')
+  else if (view === 'party-lobby') onBack = leaveParty
   else if (view === 'manage') onBack = () => setView('home')
 
   return (

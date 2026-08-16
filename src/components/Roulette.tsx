@@ -14,6 +14,8 @@ interface RouletteProps {
   soundEnabled: boolean
   /** Ueberraschungs-Modus: Cover & Titel der Karten verbergen. */
   surprise: boolean
+  /** Vorgegebene Gewinner-Rarity (Party: synchron auf allen Geräten). Sonst lokal gewürfelt. */
+  rarity?: string | null
   /** Wird aufgerufen, wenn die Animation vollständig gestoppt ist. */
   onComplete: () => void
 }
@@ -78,14 +80,16 @@ function rollWinnerRarity(): string {
  * wird (nicht aus Frame-Inkrementen), landet IMMER derselbe Song –
  * unabhängig von der Bildwiederholrate.
  */
-export function Roulette({ strip, winnerIndex, soundEnabled, surprise, onComplete }: RouletteProps) {
+export function Roulette({ strip, winnerIndex, soundEnabled, surprise, rarity, onComplete }: RouletteProps) {
   const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
   // Gewinner-Rarity genau EINMAL pro Ziehung würfeln (stabil über Re-Renders).
+  // Im Party-Modus kommt sie vom Server -> alle Geräte zeigen dieselbe.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const winnerRarity = useMemo(rollWinnerRarity, [strip, winnerIndex])
+  const rolled = useMemo(rollWinnerRarity, [strip, winnerIndex])
+  const winnerRarity = rarity || rolled
 
   // Aktuellste Callback-/Flag-Werte in Refs halten, damit der Effekt NICHT
   // von ihrer Identität abhängt und die Animation genau EINMAL läuft
