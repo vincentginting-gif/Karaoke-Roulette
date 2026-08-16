@@ -3079,3 +3079,8 @@ code {
   color: var(--text-dim);
   font-style: italic;
 }
+.party-local-hint {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}

@@ -13,6 +13,8 @@ interface PartyResult {
   canNext: boolean
   /** Turn an die nächste Person übergeben. */
   onNext: () => void
+  /** Zurück in die Party-Lobby (immer verfügbar). */
+  onBackToLobby: () => void
 }
 
 interface ResultProps {
@@ -142,7 +144,11 @@ export function Result({ track, onAgain, onChangePlaylist, party }: ResultProps)
         </div>
       )}
 
-      {!party && (
+      {party ? (
+        <button className="btn btn-ghost result-switch" onClick={party.onBackToLobby}>
+          🎉 {t('party.back')}
+        </button>
+      ) : (
         <button className="btn btn-ghost result-switch" onClick={onChangePlaylist}>
           🔀 {t('result.switch')}
         </button>

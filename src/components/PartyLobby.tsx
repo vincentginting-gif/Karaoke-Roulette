@@ -9,6 +9,8 @@ interface PartyLobbyProps {
   deviceId: string
   isHost: boolean
   isMyTurn: boolean
+  /** Lokale Party (ein Gerät, kein Code/Link zum Teilen). */
+  local: boolean
   /** Ist der Song-Pool bereit (Cover geladen)? */
   ready: boolean
   onAddName: (name: string) => void
@@ -30,6 +32,7 @@ export function PartyLobby({
   deviceId,
   isHost,
   isMyTurn,
+  local,
   ready,
   onAddName,
   onRemoveName,
@@ -57,13 +60,20 @@ export function PartyLobby({
         <div className="party-header-logo" aria-hidden="true">
           <Logo />
         </div>
-        <div className="party-code-box">
-          <span className="party-code-label">{t('party.code')}</span>
-          <span className="party-code">{state.code}</span>
-          <button className="offline-link-btn" onClick={onCopyLink}>
-            🔗 {t('party.copyLink')}
-          </button>
-        </div>
+        {local ? (
+          <div className="party-code-box">
+            <span className="party-code-label">{t('party.localTag')}</span>
+            <span className="party-local-hint">{t('party.localHint')}</span>
+          </div>
+        ) : (
+          <div className="party-code-box">
+            <span className="party-code-label">{t('party.code')}</span>
+            <span className="party-code">{state.code}</span>
+            <button className="offline-link-btn" onClick={onCopyLink}>
+              🔗 {t('party.copyLink')}
+            </button>
+          </div>
+        )}
       </header>
 
       {/* Wer ist dran + Spin */}

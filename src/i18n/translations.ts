@@ -307,10 +307,16 @@ export const translations: Record<string, Entry> = {
   'offline.desc.latino': { de: 'Reggaeton & Latin-Pop zum Tanzen', en: 'Reggaeton & Latin pop to dance to', ko: '춤추는 레게톤·라틴 팝' },
 
   // ── Party-Modus (live, mehrere Geräte) ──
-  'party.barTitle': { de: 'Party-Modus – zusammen spinnen', en: 'Party mode – spin together', ko: '파티 모드 – 함께 돌리기' },
+  'party.barTitle': { de: 'Party-Modus – reihum singen', en: 'Party mode – take turns singing', ko: '파티 모드 – 돌아가며 노래' },
   'party.start': { de: 'Party starten', en: 'Start party', ko: '파티 시작' },
+  'party.startLocal': { de: 'Party auf diesem Gerät', en: 'Party on this device', ko: '이 기기에서 파티' },
+  'party.startOnline': { de: 'Mehrere Geräte', en: 'Multiple devices', ko: '여러 기기' },
   'party.join': { de: 'Beitreten', en: 'Join', ko: '참가' },
-  'party.pickPlaylist': { de: 'Wähle eine Playlist für die Party', en: 'Pick a playlist for the party', ko: '파티에 쓸 플레이리스트를 고르세요' },
+  'party.localTag': { de: 'Party auf einem Gerät', en: 'Party on one device', ko: '한 기기 파티' },
+  'party.localHint': { de: 'Handy herumreichen 🎤', en: 'Pass the phone around 🎤', ko: '휴대폰을 돌려가며 🎤' },
+  'party.back': { de: 'Zur Party', en: 'Back to party', ko: '파티로' },
+  'party.pickPlaylist': { de: 'Wähle eine Playlist für die Party (dieses Gerät)', en: 'Pick a playlist for the party (this device)', ko: '파티에 쓸 플레이리스트를 고르세요 (이 기기)' },
+  'party.pickPlaylistOnline': { de: 'Wähle eine Playlist für die Online-Party', en: 'Pick a playlist for the online party', ko: '온라인 파티에 쓸 플레이리스트를 고르세요' },
   'party.cancel': { de: 'Abbrechen', en: 'Cancel', ko: '취소' },
   'party.code': { de: 'Raum-Code', en: 'Room code', ko: '방 코드' },
   'party.copyLink': { de: 'Link kopieren', en: 'Copy link', ko: '링크 복사' },

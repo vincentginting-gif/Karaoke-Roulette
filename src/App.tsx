@@ -64,6 +64,7 @@ import { PlaylistConverter } from './components/PlaylistConverter'
 import { OfflineGuest, OfflineCustom } from './components/OfflineGuest'
 import { PartyLobby, PartyJoin } from './components/PartyLobby'
 import { useParty } from './party/useParty'
+import { useLocalParty } from './party/localParty'
 import { partyHealth, toLocalTime } from './party/partyClient'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
 import { GearIcon } from './components/icons'
@@ -212,9 +213,11 @@ export function App() {
   const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>(() => loadUserPlaylists())
   const [editingPlaylist, setEditingPlaylist] = useState<UserPlaylist | null>(null)
 
-  // Party-Modus (live, mehrere Geräte)
+  // Party-Modus (live, mehrere Geräte – oder lokal auf einem Gerät)
   const [partyMode, setPartyMode] = useState(false)
+  const [partyLocal, setPartyLocal] = useState(false) // lokal (ein Gerät) statt online
   const [partyPick, setPartyPick] = useState(false) // Playlist für die Party wählen
+  const [partyPickMode, setPartyPickMode] = useState<'local' | 'online'>('local')
   const [partyEnabled, setPartyEnabled] = useState(false) // Server eingerichtet?
   const [partyJoinError, setPartyJoinError] = useState<string | null>(null)
   const [partyBusy, setPartyBusy] = useState(false)
@@ -823,13 +826,17 @@ export function App() {
   const prevTurnIndexRef = useRef<number | null>(null)
   const spinTimerRef = useRef<number | null>(null)
 
-  const party = useParty({
+  const onlineParty = useParty({
     onError: () => {
       setPartyMode(false)
+      setPartyLocal(false)
       setView('offline')
       showError(t('party.err.gone'))
     },
   })
+  const localParty = useLocalParty()
+  // Aktiver „Treiber": lokal (ein Gerät) oder online (mehrere Geräte).
+  const party = partyLocal ? localParty : onlineParty
 
   // Server eingerichtet? (Feature-Flag – Party-Buttons nur dann zeigen)
   useEffect(() => {
@@ -855,7 +862,23 @@ export function App() {
     setLastWinnerId(null)
   }, [])
 
-  const createParty = useCallback(
+  // Lokale Party (ein Gerät, kein Server).
+  const createLocalParty = useCallback(
+    (name: string, songs: string[]) => {
+      mountPartyTracks(name, songs)
+      localParty.create(name, songs)
+      consumedSeqRef.current = 0
+      prevTurnIndexRef.current = null
+      setPartyLocal(true)
+      setPartyMode(true)
+      setPartyPick(false)
+      setView('party-lobby')
+    },
+    [localParty, mountPartyTracks],
+  )
+
+  // Online-Party (mehrere Geräte, braucht den Party-Server).
+  const createOnlineParty = useCallback(
     async (name: string, songs: string[]) => {
       if (!partyEnabled) {
         showError(t('party.err.disabled'))
@@ -864,9 +887,10 @@ export function App() {
       setPartyBusy(true)
       try {
         mountPartyTracks(name, songs)
-        await party.create({ name: name || 'Party', songs, order: 'manual', noRepeat: true, initialNames: [] })
+        await onlineParty.create({ name: name || 'Party', songs, order: 'manual', noRepeat: true, initialNames: [] })
         consumedSeqRef.current = 0
         prevTurnIndexRef.current = null
+        setPartyLocal(false)
         setPartyMode(true)
         setPartyPick(false)
         setView('party-lobby')
@@ -876,7 +900,7 @@ export function App() {
         setPartyBusy(false)
       }
     },
-    [partyEnabled, party, mountPartyTracks, showError, t],
+    [partyEnabled, onlineParty, mountPartyTracks, showError, t],
   )
 
   const joinParty = useCallback(
@@ -884,10 +908,11 @@ export function App() {
       setPartyBusy(true)
       setPartyJoinError(null)
       try {
-        const state = await party.join(code)
+        const state = await onlineParty.join(code)
         mountPartyTracks(state.meta.name, state.meta.songs)
         consumedSeqRef.current = state.event?.seq ?? 0
         prevTurnIndexRef.current = state.turnIndex
+        setPartyLocal(false)
         setPartyMode(true)
         setView('party-lobby')
       } catch (e) {
@@ -897,19 +922,24 @@ export function App() {
         setPartyBusy(false)
       }
     },
-    [party, mountPartyTracks, t],
+    [onlineParty, mountPartyTracks, t],
   )
 
   const leaveParty = useCallback(() => {
     if (spinTimerRef.current) window.clearTimeout(spinTimerRef.current)
-    party.leave()
+    onlineParty.leave()
+    localParty.leave()
     setPartyMode(false)
+    setPartyLocal(false)
     setPartyPick(false)
     setView('offline')
-  }, [party])
+  }, [onlineParty, localParty])
+
+  // Aus dem Ergebnis zurück in die Lobby (Sicherheits-/„Zur Party"-Knopf).
+  const backToLobby = useCallback(() => setView('party-lobby'), [])
 
   const copyPartyLink = useCallback(async () => {
-    const code = party.session?.code
+    const code = onlineParty.session?.code
     if (!code) return
     const link = `${location.origin}${location.pathname}#party=${code}`
     try {
@@ -918,25 +948,28 @@ export function App() {
     } catch {
       window.prompt(t('party.copyLink'), link)
     }
-  }, [party.session?.code, t])
+  }, [onlineParty.session?.code, t])
 
-  // Playlist für die Party wählen (Klick auf eine Playlist -> Raum erstellen).
+  // Playlist für die Party wählen (Klick auf eine Playlist -> Party starten).
   const handleOfflineStart = useCallback(
     (name: string, lines: ParsedLine[]) => {
-      if (partyPick) createParty(name, lines.map((p) => (p.artist ? `${p.title} - ${p.artist}` : p.title)))
-      else startOffline(name, lines)
+      if (!partyPick) return startOffline(name, lines)
+      const songs = lines.map((p) => (p.artist ? `${p.title} - ${p.artist}` : p.title))
+      if (partyPickMode === 'online') void createOnlineParty(name, songs)
+      else createLocalParty(name, songs)
     },
-    [partyPick, createParty, startOffline],
+    [partyPick, partyPickMode, createOnlineParty, createLocalParty, startOffline],
   )
   const handleUserStart = useCallback(
     (pl: UserPlaylist) => {
-      if (partyPick) createParty(pl.name, pl.songs)
-      else startUserPlaylist(pl)
+      if (!partyPick) return startUserPlaylist(pl)
+      if (partyPickMode === 'online') void createOnlineParty(pl.name, pl.songs)
+      else createLocalParty(pl.name, pl.songs)
     },
-    [partyPick, createParty, startUserPlaylist],
+    [partyPick, partyPickMode, createOnlineParty, createLocalParty, startUserPlaylist],
   )
 
-  // Neuer Spin vom Server -> Animation (synchron über event.startAt) auslösen.
+  // Neuer Spin -> Animation auslösen (online: synchron über event.startAt).
   useEffect(() => {
     const ev = party.state?.event
     if (!partyMode || !ev) return
@@ -947,7 +980,7 @@ export function App() {
     setWinner(winnerTrack)
     setStrip(buildStrip(pool, winnerTrack))
     setWinnerRarity(ev.rarity)
-    const delay = Math.max(0, toLocalTime(ev.startAt) - Date.now())
+    const delay = partyLocal ? 0 : Math.max(0, toLocalTime(ev.startAt) - Date.now())
     if (spinTimerRef.current) window.clearTimeout(spinTimerRef.current)
     spinTimerRef.current = window.setTimeout(() => setView('roulette'), delay)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -977,9 +1010,11 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Abgeleitete Party-Infos.
+  // Abgeleitete Party-Infos. Lokal (ein Gerät) ist immer „ich dran".
   const partyCurrent = party.state ? party.state.players[party.state.turnIndex] : undefined
-  const isMyTurn = Boolean(partyCurrent && partyCurrent.ownerDeviceId === party.deviceId)
+  const isMyTurn = partyLocal
+    ? true
+    : Boolean(partyCurrent && partyCurrent.ownerDeviceId === party.deviceId)
 
   // ── Rendering ──────────────────────────────────────────────
 
@@ -1021,7 +1056,15 @@ export function App() {
         onImportFile={importUserPlaylistsFromFile}
         partyEnabled={partyEnabled}
         partyPick={partyPick}
-        onStartParty={() => setPartyPick(true)}
+        partyPickMode={partyPickMode}
+        onStartLocalParty={() => {
+          setPartyPickMode('local')
+          setPartyPick(true)
+        }}
+        onStartOnlineParty={() => {
+          setPartyPickMode('online')
+          setPartyPick(true)
+        }}
         onCancelParty={() => setPartyPick(false)}
         onJoinParty={() => {
           setPartyJoinError(null)
@@ -1040,6 +1083,7 @@ export function App() {
         deviceId={party.deviceId}
         isHost={party.isHost}
         isMyTurn={isMyTurn}
+        local={partyLocal}
         ready={pool.length > 0}
         onAddName={party.addName}
         onRemoveName={party.removeName}
@@ -1163,7 +1207,11 @@ export function App() {
             ? {
                 singer: party.state.event?.singer ?? '—',
                 canNext: isMyTurn,
-                onNext: party.next,
+                onNext: async () => {
+                  await party.next()
+                  setView('party-lobby')
+                },
+                onBackToLobby: backToLobby,
               }
             : undefined
         }

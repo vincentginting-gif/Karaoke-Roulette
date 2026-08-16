@@ -22,11 +22,14 @@ interface OfflineGuestProps {
   onExport: () => void
   /** Playlists aus einer Datei wiederherstellen. */
   onImportFile: (file: File) => void
-  /** Party-Server verfügbar? (sonst Party-Leiste ausblenden) */
+  /** Online-Party-Server verfügbar? (steuert die „Mehrere Geräte"-Optionen) */
   partyEnabled: boolean
   /** Gerade eine Playlist für die Party auswählen? */
   partyPick: boolean
-  onStartParty: () => void
+  /** Modus der laufenden Auswahl (für den Banner-Text). */
+  partyPickMode: 'local' | 'online'
+  onStartLocalParty: () => void
+  onStartOnlineParty: () => void
   onCancelParty: () => void
   onJoinParty: () => void
 }
@@ -48,7 +51,9 @@ export function OfflineGuest({
   onImportFile,
   partyEnabled,
   partyPick,
-  onStartParty,
+  partyPickMode,
+  onStartLocalParty,
+  onStartOnlineParty,
   onCancelParty,
   onJoinParty,
 }: OfflineGuestProps) {
@@ -67,28 +72,36 @@ export function OfflineGuest({
         </div>
       </header>
 
-      {/* Party-Leiste (nur wenn der Party-Server eingerichtet ist) */}
-      {partyEnabled &&
-        (partyPick ? (
-          <div className="party-bar party-bar-pick">
-            <span className="party-bar-text">🎉 {t('party.pickPlaylist')}</span>
-            <button className="offline-link-btn" onClick={onCancelParty}>
-              {t('party.cancel')}
+      {/* Party-Leiste: lokal (ein Gerät) immer, „mehrere Geräte" nur mit Server */}
+      {partyPick ? (
+        <div className="party-bar party-bar-pick">
+          <span className="party-bar-text">
+            🎉 {partyPickMode === 'online' ? t('party.pickPlaylistOnline') : t('party.pickPlaylist')}
+          </span>
+          <button className="offline-link-btn" onClick={onCancelParty}>
+            {t('party.cancel')}
+          </button>
+        </div>
+      ) : (
+        <div className="party-bar">
+          <span className="party-bar-text">🎉 {t('party.barTitle')}</span>
+          <div className="party-bar-actions">
+            <button className="btn btn-primary party-bar-btn" onClick={onStartLocalParty}>
+              {t('party.startLocal')}
             </button>
-          </div>
-        ) : (
-          <div className="party-bar">
-            <span className="party-bar-text">🎉 {t('party.barTitle')}</span>
-            <div className="party-bar-actions">
-              <button className="btn btn-primary party-bar-btn" onClick={onStartParty}>
-                {t('party.start')}
+            {partyEnabled && (
+              <button className="btn btn-ghost party-bar-btn" onClick={onStartOnlineParty}>
+                {t('party.startOnline')}
               </button>
+            )}
+            {partyEnabled && (
               <button className="offline-link-btn" onClick={onJoinParty}>
                 {t('party.join')}
               </button>
-            </div>
+            )}
           </div>
-        ))}
+        </div>
+      )}
 
       {/* Eigene Playlists + Erstellen */}
       <div className="offline-section-row">
