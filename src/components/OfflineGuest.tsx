@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useI18n } from '../i18n/i18n'
 import { parseList, type ParsedLine } from '../spotify/convert'
 import { KARAOKE_PRESETS } from '../data/karaokePresets'
@@ -16,6 +16,12 @@ interface OfflineGuestProps {
   onStartUser: (pl: UserPlaylist) => void
   onEditUser: (pl: UserPlaylist) => void
   onDeleteUser: (id: string) => void
+  /** Playlist per Link teilen. */
+  onShareUser: (pl: UserPlaylist) => void
+  /** Alle eigenen Playlists als Datei sichern. */
+  onExport: () => void
+  /** Playlists aus einer Datei wiederherstellen. */
+  onImportFile: (file: File) => void
 }
 
 /**
@@ -30,8 +36,12 @@ export function OfflineGuest({
   onStartUser,
   onEditUser,
   onDeleteUser,
+  onShareUser,
+  onExport,
+  onImportFile,
 }: OfflineGuestProps) {
   const { t } = useI18n()
+  const fileRef = useRef<HTMLInputElement>(null)
 
   return (
     <section className="stage fade-in offline-home">
@@ -46,7 +56,30 @@ export function OfflineGuest({
       </header>
 
       {/* Eigene Playlists + Erstellen */}
-      <h3 className="offline-section">{t('offline.sectionMine')}</h3>
+      <div className="offline-section-row">
+        <h3 className="offline-section">{t('offline.sectionMine')}</h3>
+        <div className="offline-section-tools">
+          {userPlaylists.length > 0 && (
+            <button className="offline-link-btn" onClick={onExport}>
+              ⬇️ {t('offline.export')}
+            </button>
+          )}
+          <button className="offline-link-btn" onClick={() => fileRef.current?.click()}>
+            ⬆️ {t('offline.import')}
+          </button>
+        </div>
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="application/json,.json"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) onImportFile(f)
+          e.target.value = ''
+        }}
+      />
       <ul className="offline-grid">
         <li>
           <button className="offline-card offline-card-create" onClick={onNew}>
@@ -76,6 +109,14 @@ export function OfflineGuest({
                 </div>
               </button>
               <div className="offline-card-tools">
+                <button
+                  className="offline-tool"
+                  onClick={() => onShareUser(pl)}
+                  aria-label={t('offline.share')}
+                  title={t('offline.share')}
+                >
+                  🔗
+                </button>
                 <button
                   className="offline-tool"
                   onClick={() => onEditUser(pl)}

@@ -260,6 +260,40 @@ export const translations: Record<string, Entry> = {
   'offline.saveBtn': { de: 'Speichern', en: 'Save', ko: '저장' },
   'offline.edit': { de: 'Bearbeiten', en: 'Edit', ko: '편집' },
   'offline.delete': { de: 'Löschen', en: 'Delete', ko: '삭제' },
+  'offline.share': { de: 'Teilen', en: 'Share', ko: '공유' },
+  'offline.export': { de: 'Sichern', en: 'Back up', ko: '백업' },
+  'offline.import': { de: 'Laden', en: 'Restore', ko: '복원' },
+  'offline.shareCopied': {
+    de: '🔗 Link kopiert – auf jedem Gerät öffnen oder weitergeben.',
+    en: '🔗 Link copied – open it on any device or share it.',
+    ko: '🔗 링크 복사됨 – 다른 기기에서 열거나 공유하세요.',
+  },
+  'offline.shareCopy': { de: 'Link kopieren:', en: 'Copy link:', ko: '링크 복사:' },
+  'offline.importedOne': {
+    de: '✅ „{name}“ hinzugefügt.',
+    en: '✅ Added “{name}”.',
+    ko: '✅ “{name}” 추가됨.',
+  },
+  'offline.importHave': {
+    de: 'Diese Playlist hast du schon.',
+    en: 'You already have this playlist.',
+    ko: '이미 가지고 있는 플레이리스트입니다.',
+  },
+  'offline.importAdded': {
+    de: '✅ {n} Playlist(s) hinzugefügt.',
+    en: '✅ Added {n} playlist(s).',
+    ko: '✅ {n}개 플레이리스트 추가됨.',
+  },
+  'offline.importNone': {
+    de: 'Nichts Neues zum Importieren gefunden.',
+    en: 'Nothing new to import.',
+    ko: '가져올 새 항목이 없습니다.',
+  },
+  'offline.importError': {
+    de: 'Datei konnte nicht gelesen werden.',
+    en: 'Could not read the file.',
+    ko: '파일을 읽을 수 없습니다.',
+  },
   'offline.deleteConfirm': {
     de: 'Playlist „{name}“ wirklich löschen?',
     en: 'Really delete the playlist “{name}”?',

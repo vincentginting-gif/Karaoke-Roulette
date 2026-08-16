@@ -875,6 +875,10 @@ code {
   font-size: 0.92rem;
   line-height: 1.4;
 }
+.toast-ok {
+  background: rgba(14, 30, 22, 0.92);
+  border-color: rgba(52, 211, 153, 0.45);
+}
 .toast-close {
   flex: none;
   border: none;
@@ -2691,6 +2695,33 @@ code {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
+}
+.offline-section-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.offline-section-tools {
+  display: flex;
+  gap: 6px;
+}
+.offline-link-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.offline-link-btn:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  color: var(--text);
 }
 .offline-card {
   width: 100%;

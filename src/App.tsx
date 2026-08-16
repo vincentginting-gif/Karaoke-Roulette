@@ -16,7 +16,12 @@ import { parseImportedJson, parseList, type ParsedLine } from './spotify/convert
 import { prefetchCovers } from './spotify/itunes'
 import {
   addUserPlaylist,
+  buildShareLink,
+  decodeSharePayload,
   deleteUserPlaylist,
+  exportPlaylistsJson,
+  importPlaylistsJson,
+  importUserPlaylist,
   loadUserPlaylists,
   updateUserPlaylist,
   type UserPlaylist,
@@ -173,6 +178,8 @@ export function App() {
 
   const [view, setView] = useState<View>('home')
   const [error, setError] = useState<string | null>(null)
+  // Kurze Erfolgsmeldung (z. B. „Link kopiert").
+  const [notice, setNotice] = useState<string | null>(null)
 
   // Gast-Modus (rollen ohne Spotify-Login)
   const [isGuest, setIsGuest] = useState(false)
@@ -563,6 +570,70 @@ export function App() {
     [refreshUserPlaylists],
   )
 
+  // Playlist per Link teilen (in Zwischenablage kopieren; Fallback: Prompt).
+  const shareUser = useCallback(
+    async (pl: UserPlaylist) => {
+      const link = buildShareLink(pl)
+      try {
+        await navigator.clipboard.writeText(link)
+        setNotice(t('offline.shareCopied'))
+      } catch {
+        window.prompt(t('offline.shareCopy'), link)
+      }
+    },
+    [t],
+  )
+
+  // Alle eigenen Playlists als JSON-Datei sichern (Download).
+  const exportUserPlaylists = useCallback(() => {
+    const text = exportPlaylistsJson(loadUserPlaylists())
+    const blob = new Blob([text], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'karaoke-playlists.json'
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }, [])
+
+  // Playlists aus einer JSON-Datei wiederherstellen.
+  const importUserPlaylistsFromFile = useCallback(
+    async (file: File) => {
+      try {
+        const added = importPlaylistsJson(await file.text())
+        refreshUserPlaylists()
+        setNotice(added > 0 ? t('offline.importAdded', { n: added }) : t('offline.importNone'))
+      } catch {
+        setError(t('offline.importError'))
+      }
+    },
+    [refreshUserPlaylists, t],
+  )
+
+  // Erfolgsmeldung nach kurzer Zeit automatisch ausblenden.
+  useEffect(() => {
+    if (!notice) return
+    const id = setTimeout(() => setNotice(null), 3200)
+    return () => clearTimeout(id)
+  }, [notice])
+
+  // Geteilten Link öffnen: Playlist aus #pl=… übernehmen und in die Offline-Ansicht.
+  useEffect(() => {
+    const m = /[#&]pl=([^&]+)/.exec(window.location.hash)
+    if (!m) return
+    // Hash entfernen, damit ein Reload nicht erneut importiert.
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+    const shared = decodeSharePayload(m[1])
+    if (!shared) return
+    const pl = importUserPlaylist(shared.name, shared.songs)
+    refreshUserPlaylists()
+    setView('offline')
+    setNotice(pl ? t('offline.importedOne', { name: shared.name }) : t('offline.importHave'))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Speichern: neu -> anlegen + direkt spielen; Bearbeiten -> aktualisieren + zurück.
   const saveCustom = useCallback(
     (name: string, lines: ParsedLine[]) => {
@@ -761,6 +832,9 @@ export function App() {
         onStartUser={startUserPlaylist}
         onEditUser={openEditCustom}
         onDeleteUser={removeUserPlaylist}
+        onShareUser={shareUser}
+        onExport={exportUserPlaylists}
+        onImportFile={importUserPlaylistsFromFile}
       />
     )
   } else if (view === 'offline-custom') {
@@ -923,6 +997,14 @@ export function App() {
     >
       {content}
       {error && <ErrorToast message={error} onDismiss={() => setError(null)} />}
+      {notice && (
+        <div className="toast toast-ok" role="status">
+          <span className="toast-text">{notice}</span>
+          <button className="toast-close" onClick={() => setNotice(null)} aria-label="OK">
+            ✕
+          </button>
+        </div>
+      )}
       {settingsOpen && (
         <SettingsPanel
           soundEnabled={soundEnabled}
