@@ -12,8 +12,15 @@ import {
   type CreatedPlaylist,
 } from './spotify/api'
 import type { Playlist, Track } from './spotify/types'
-import { parseImportedJson, type ParsedLine } from './spotify/convert'
+import { parseImportedJson, parseList, type ParsedLine } from './spotify/convert'
 import { prefetchCovers } from './spotify/itunes'
+import {
+  addUserPlaylist,
+  deleteUserPlaylist,
+  loadUserPlaylists,
+  updateUserPlaylist,
+  type UserPlaylist,
+} from './data/userPlaylists'
 import type { Genre } from './spotify/genres'
 import {
   clearDrawnIds,
@@ -175,6 +182,10 @@ export function App() {
 
   // Konvertierte Songs (aus dem Konverter, direkt im Roulette nutzbar)
   const [convertedTracks, setConvertedTracks] = useState<Track[]>([])
+
+  // Eigene, gespeicherte Offline-Playlists
+  const [userPlaylists, setUserPlaylists] = useState<UserPlaylist[]>(() => loadUserPlaylists())
+  const [editingPlaylist, setEditingPlaylist] = useState<UserPlaylist | null>(null)
 
   // Playlists (nur bei Bedarf geladen)
   const [playlists, setPlaylists] = useState<Playlist[]>([])
@@ -526,6 +537,51 @@ export function App() {
     setView('home')
   }, [])
 
+  // ── Eigene Playlists (Offline): erstellen / spielen / bearbeiten / löschen ──
+  const refreshUserPlaylists = useCallback(() => setUserPlaylists(loadUserPlaylists()), [])
+
+  const startUserPlaylist = useCallback(
+    (pl: UserPlaylist) => startOffline(pl.name, parseList(pl.songs.join('\n'), false)),
+    [startOffline],
+  )
+
+  const openNewCustom = useCallback(() => {
+    setEditingPlaylist(null)
+    setView('offline-custom')
+  }, [])
+
+  const openEditCustom = useCallback((pl: UserPlaylist) => {
+    setEditingPlaylist(pl)
+    setView('offline-custom')
+  }, [])
+
+  const removeUserPlaylist = useCallback(
+    (id: string) => {
+      deleteUserPlaylist(id)
+      refreshUserPlaylists()
+    },
+    [refreshUserPlaylists],
+  )
+
+  // Speichern: neu -> anlegen + direkt spielen; Bearbeiten -> aktualisieren + zurück.
+  const saveCustom = useCallback(
+    (name: string, lines: ParsedLine[]) => {
+      const songs = lines.map((p) => (p.artist ? `${p.title} - ${p.artist}` : p.title))
+      if (editingPlaylist) {
+        updateUserPlaylist(editingPlaylist.id, name, songs)
+        refreshUserPlaylists()
+        setEditingPlaylist(null)
+        setView('offline')
+      } else {
+        addUserPlaylist(name, songs)
+        refreshUserPlaylists()
+        setEditingPlaylist(null)
+        startOffline(name || 'Meine Playlist', lines)
+      }
+    },
+    [editingPlaylist, refreshUserPlaylists, startOffline],
+  )
+
   // ── Gespeicherte JSON-Datei importieren (aus dem Picker) ──
   const importSongsFile = useCallback(
     async (file: File) => {
@@ -697,9 +753,18 @@ export function App() {
 
   if (view === 'offline') {
     // Offline-Modus: unabhängig vom Login-Status erreichbar.
-    content = <OfflineGuest onStart={startOffline} onCustom={() => setView('offline-custom')} />
+    content = (
+      <OfflineGuest
+        onStart={startOffline}
+        onNew={openNewCustom}
+        userPlaylists={userPlaylists}
+        onStartUser={startUserPlaylist}
+        onEditUser={openEditCustom}
+        onDeleteUser={removeUserPlaylist}
+      />
+    )
   } else if (view === 'offline-custom') {
-    content = <OfflineCustom onStart={startOffline} />
+    content = <OfflineCustom initial={editingPlaylist} onSave={saveCustom} />
   } else if (auth.status === 'checking' && !isGuest) {
     content = <Spinner label={t('app.checking')} />
   } else if (auth.status === 'disconnected' && !isGuest) {
