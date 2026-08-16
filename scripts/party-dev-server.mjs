@@ -12,6 +12,7 @@ import {
   addPlayer,
   removePlayer,
   updateSettings,
+  addSong,
   spin,
   nextTurn,
 } from '../api/party/_core.js'
@@ -75,6 +76,9 @@ async function handleParty(req, res, pathname, query) {
     }
     if (pathname === '/api/party/settings') {
       return json(res, 200, { ok: true, state: await updateSettings(store, { ...body, code }) })
+    }
+    if (pathname === '/api/party/songs') {
+      return json(res, 200, { ok: true, state: await addSong(store, { ...body, code }) })
     }
     if (pathname === '/api/party/spin') {
       return json(res, 200, { ok: true, state: await spin(store, { ...body, code }) })

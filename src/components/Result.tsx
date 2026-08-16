@@ -13,6 +13,8 @@ interface PartyResult {
   canNext: boolean
   /** Turn an die nächste Person übergeben. */
   onNext: () => void
+  /** Nochmal spinnen (gleiche Person, weiter spinnen). */
+  onAgain: () => void
   /** Zurück in die Party-Lobby (immer verfügbar). */
   onBackToLobby: () => void
 }
@@ -103,10 +105,15 @@ export function Result({ track, onAgain, onChangePlaylist, party }: ResultProps)
         </a>
         {party ? (
           party.canNext ? (
-            <button className="btn btn-primary" onClick={party.onNext}>
-              <DiceIcon className="btn-icon" />
-              {t('party.next')}
-            </button>
+            <>
+              <button className="btn btn-ghost" onClick={party.onAgain}>
+                🔁 {t('party.again')}
+              </button>
+              <button className="btn btn-primary" onClick={party.onNext}>
+                <DiceIcon className="btn-icon" />
+                {t('party.next')}
+              </button>
+            </>
           ) : (
             <span className="result-wait">{t('party.waitNext', { name: party.singer })}</span>
           )

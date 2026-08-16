@@ -105,6 +105,12 @@ export function useLocalParty() {
     setState((s) => (s ? { ...s, meta: { ...s.meta, noRepeat } } : s))
   }, [])
 
+  const addSong = useCallback(async (song: string) => {
+    const s = song.trim()
+    if (!s) return
+    setState((st) => (st ? { ...st, meta: { ...st.meta, songs: [...st.meta.songs, s] } } : st))
+  }, [])
+
   const spin = useCallback(async () => {
     setState((s) => {
       if (!s || s.players.length === 0) return s
@@ -152,6 +158,7 @@ export function useLocalParty() {
     removeName,
     setOrder,
     setNoRepeat,
+    addSong,
     spin,
     next,
     leave,

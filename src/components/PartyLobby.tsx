@@ -15,6 +15,7 @@ interface PartyLobbyProps {
   ready: boolean
   onAddName: (name: string) => void
   onRemoveName: (playerId: string) => void
+  onAddSong: (song: string) => void
   onSetOrder: (order: TurnOrder) => void
   onSetNoRepeat: (v: boolean) => void
   onSpin: () => void
@@ -36,6 +37,7 @@ export function PartyLobby({
   ready,
   onAddName,
   onRemoveName,
+  onAddSong,
   onSetOrder,
   onSetNoRepeat,
   onSpin,
@@ -44,6 +46,7 @@ export function PartyLobby({
 }: PartyLobbyProps) {
   const { t } = useI18n()
   const [name, setName] = useState('')
+  const [song, setSong] = useState('')
   const current = state.players[state.turnIndex]
   const singer = current?.name ?? '—'
 
@@ -52,6 +55,12 @@ export function PartyLobby({
     if (!n) return
     onAddName(n)
     setName('')
+  }
+  const addSong = () => {
+    const s = song.trim()
+    if (!s) return
+    onAddSong(s)
+    setSong('')
   }
 
   return (
@@ -148,6 +157,35 @@ export function PartyLobby({
         <p className="party-hint">{t('party.addHint')}</p>
       </div>
 
+      {/* Songs zur Playlist hinzufügen */}
+      <div className="party-players">
+        <h3 className="offline-section">
+          🎵 {t('party.songs')} ({state.meta.songs.length})
+        </h3>
+        <ul className="party-song-list">
+          {state.meta.songs.slice(-6).map((s, i) => (
+            <li key={`${s}-${i}`} className="party-song">
+              {s}
+            </li>
+          ))}
+        </ul>
+        <div className="party-add">
+          <input
+            className="conv-name-input"
+            type="text"
+            value={song}
+            onChange={(e) => setSong(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && addSong()}
+            placeholder={t('party.songPlaceholder')}
+            aria-label={t('party.addSong')}
+            maxLength={120}
+          />
+          <button className="btn btn-ghost" onClick={addSong}>
+            ＋ {t('party.addSong')}
+          </button>
+        </div>
+      </div>
+
       {/* Einstellungen (nur Gastgeber) */}
       {isHost && (
         <div className="party-settings">
@@ -183,6 +221,43 @@ export function PartyLobby({
 
       <button className="btn btn-ghost party-leave" onClick={onLeave}>
         {t('party.leave')}
+      </button>
+    </section>
+  )
+}
+
+interface PartyTurnProps {
+  singer: string
+  isMyTurn: boolean
+  ready: boolean
+  onSpin: () => void
+  onBackToLobby: () => void
+}
+
+/**
+ * Übergangs-/Handoff-Screen nach „Nächster dran": zeigt groß, wer jetzt
+ * dran ist, mit dem Spin-Button (bzw. Warten, wenn ein anderes Gerät dran ist).
+ */
+export function PartyTurn({ singer, isMyTurn, ready, onSpin, onBackToLobby }: PartyTurnProps) {
+  const { t } = useI18n()
+  return (
+    <section className="stage stage-center fade-in party-turn-screen">
+      <p className="party-turn-kicker">{t('party.nextTurn')}</p>
+      <p className="party-turn-big">🎤 {singer}</p>
+      {isMyTurn ? (
+        <button
+          className="btn btn-primary btn-spin glow-strong party-spin"
+          onClick={onSpin}
+          disabled={!ready}
+        >
+          <DiceIcon className="btn-icon" />
+          {t('party.spin')}
+        </button>
+      ) : (
+        <p className="party-wait">{t('party.waitTurn', { name: singer })}</p>
+      )}
+      <button className="btn btn-ghost party-turn-back" onClick={onBackToLobby}>
+        {t('party.back')}
       </button>
     </section>
   )

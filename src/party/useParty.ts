@@ -104,6 +104,12 @@ export function useParty({ onError }: UsePartyOptions = {}) {
     setState(await api.updateSettings(s.code, s.hostSecret, { noRepeat }))
   }, [])
 
+  const addSong = useCallback(async (song: string) => {
+    const s = sessionRef.current
+    if (!s || !song.trim()) return
+    setState(await api.addSong(s.code, song.trim()))
+  }, [])
+
   const spin = useCallback(async () => {
     const s = sessionRef.current
     if (!s) return
@@ -130,6 +136,7 @@ export function useParty({ onError }: UsePartyOptions = {}) {
     removeName,
     setOrder,
     setNoRepeat,
+    addSong,
     spin,
     next,
   }

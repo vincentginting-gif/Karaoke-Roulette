@@ -6,6 +6,7 @@ import {
   addPlayer,
   removePlayer,
   updateSettings,
+  addSong,
   spin,
   nextTurn,
   pickWinnerIndex,
@@ -130,6 +131,12 @@ async function run() {
   ok(denied, 'fremdes Gerät darf Bob nicht entfernen')
   state = await removePlayer(store, { code, deviceId: 'devB', playerId: bobId })
   ok(state.players.length === 2 && !state.players.find((p) => p.id === bobId), 'Bob entfernt')
+
+  // Song hinzufügen.
+  const before = (await getState(store, code)).meta.songs.length
+  state = await addSong(store, { code, song: 'Neuer Song - Test' })
+  ok(state.meta.songs.length === before + 1, 'Song hinzugefügt (+1)')
+  ok(state.meta.songs[state.meta.songs.length - 1] === 'Neuer Song - Test', 'Neuer Song am Ende')
 
   // Raum nicht gefunden.
   let notFound = false

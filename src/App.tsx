@@ -62,7 +62,7 @@ import { DiscoverPicker } from './components/DiscoverPicker'
 import { ChipQueryPicker } from './components/ChipQueryPicker'
 import { PlaylistConverter } from './components/PlaylistConverter'
 import { OfflineGuest, OfflineCustom } from './components/OfflineGuest'
-import { PartyLobby, PartyJoin } from './components/PartyLobby'
+import { PartyLobby, PartyJoin, PartyTurn } from './components/PartyLobby'
 import { useParty } from './party/useParty'
 import { useLocalParty } from './party/localParty'
 import { partyHealth, toLocalTime } from './party/partyClient'
@@ -81,6 +81,7 @@ type View =
   | 'offline-custom'
   | 'party-lobby'
   | 'party-join'
+  | 'party-turn'
   | 'roulette'
   | 'result'
   | 'manage'
@@ -825,6 +826,7 @@ export function App() {
   const consumedSeqRef = useRef(0) // letzter verarbeiteter Spin (event.seq)
   const prevTurnIndexRef = useRef<number | null>(null)
   const spinTimerRef = useRef<number | null>(null)
+  const partySongCountRef = useRef(0) // erkennt neu hinzugefügte Party-Songs
 
   const onlineParty = useParty({
     onError: () => {
@@ -849,9 +851,15 @@ export function App() {
     }
   }, [])
 
+  // Songs als spielbare Tracks – GENAU 1 Track pro Song (Index-Treue zum
+  // Server, damit winnerIndex überall dasselbe Lied trifft).
+  const partyTracksFromSongs = (songs: string[]) =>
+    buildOfflineTracks(songs.map((s) => parseList(s, false)[0] ?? { title: s, artist: '' }))
+
   // Songs (vom Server) als spielbare Tracks bereitstellen.
   const mountPartyTracks = useCallback((name: string, songs: string[]) => {
-    const trks = buildOfflineTracks(parseList(songs.join('\n'), false))
+    const trks = partyTracksFromSongs(songs)
+    partySongCountRef.current = songs.length
     setConvertedTracks(trks)
     const pl = makeConvertPlaylist(name || 'Party', trks.length)
     setActivePlaylist(pl)
@@ -929,6 +937,7 @@ export function App() {
     if (spinTimerRef.current) window.clearTimeout(spinTimerRef.current)
     onlineParty.leave()
     localParty.leave()
+    partySongCountRef.current = 0
     setPartyMode(false)
     setPartyLocal(false)
     setPartyPick(false)
@@ -986,7 +995,7 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [party.state?.event?.seq, partyMode, pool])
 
-  // Turn weitergegeben -> zurück in die Lobby (aus dem Ergebnis).
+  // Turn weitergegeben -> Übergangsscreen (aus dem Ergebnis).
   useEffect(() => {
     if (!partyMode) return
     const ti = party.state?.turnIndex
@@ -997,9 +1006,21 @@ export function App() {
     }
     if (ti !== prevTurnIndexRef.current) {
       prevTurnIndexRef.current = ti
-      setView((v) => (v === 'result' ? 'party-lobby' : v))
+      setView((v) => (v === 'result' ? 'party-turn' : v))
     }
   }, [party.state?.turnIndex, partyMode])
+
+  // Neu hinzugefügte Party-Songs -> spielbaren Pool aktualisieren.
+  useEffect(() => {
+    if (!partyMode || !party.state) return
+    const songs = party.state.meta.songs
+    if (songs.length === partySongCountRef.current) return
+    partySongCountRef.current = songs.length
+    const trks = partyTracksFromSongs(songs)
+    setConvertedTracks(trks)
+    setTracks(trks)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [party.state?.meta.songs.length, partyMode])
 
   // Geteilten Party-Link öffnen (#party=CODE) -> automatisch beitreten.
   useEffect(() => {
@@ -1076,6 +1097,16 @@ export function App() {
     content = <OfflineCustom initial={editingPlaylist} onSave={saveCustom} />
   } else if (view === 'party-join') {
     content = <PartyJoin onJoin={joinParty} error={partyJoinError} busy={partyBusy} />
+  } else if (view === 'party-turn' && party.state) {
+    content = (
+      <PartyTurn
+        singer={partyCurrent?.name ?? '—'}
+        isMyTurn={isMyTurn}
+        ready={pool.length > 0}
+        onSpin={party.spin}
+        onBackToLobby={backToLobby}
+      />
+    )
   } else if (view === 'party-lobby' && party.state) {
     content = (
       <PartyLobby
@@ -1087,6 +1118,7 @@ export function App() {
         ready={pool.length > 0}
         onAddName={party.addName}
         onRemoveName={party.removeName}
+        onAddSong={party.addSong}
         onSetOrder={party.setOrder}
         onSetNoRepeat={party.setNoRepeat}
         onSpin={party.spin}
@@ -1210,8 +1242,9 @@ export function App() {
                 canNext: isMyTurn,
                 onNext: async () => {
                   await party.next()
-                  setView('party-lobby')
+                  setView('party-turn')
                 },
+                onAgain: party.spin,
                 onBackToLobby: backToLobby,
               }
             : undefined
@@ -1264,6 +1297,7 @@ export function App() {
   else if (view === 'offline-custom') onBack = () => setView('offline')
   else if (view === 'party-join') onBack = () => setView('offline')
   else if (view === 'party-lobby') onBack = leaveParty
+  else if (view === 'party-turn') onBack = () => setView('party-lobby')
   else if (view === 'manage') onBack = () => setView('home')
 
   return (

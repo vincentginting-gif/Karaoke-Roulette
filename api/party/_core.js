@@ -222,6 +222,19 @@ export async function removePlayer(store, params) {
   return getState(store, code)
 }
 
+/** Song zur Playlist hinzufügen (jede:r im Raum darf). */
+export async function addSong(store, params) {
+  const code = params.code
+  const meta = await loadMeta(store, code)
+  const song = String(params.song || '').trim().slice(0, 200)
+  if (!song) throw httpError(400, 'no_song')
+  if (meta.songs.length >= MAX_SONGS) throw httpError(400, 'too_many_songs')
+  meta.songs = [...meta.songs, song]
+  await store.set(kMeta(code), JSON.stringify(meta), TTL)
+  await touch(store, code)
+  return getState(store, code)
+}
+
 /** Einstellungen ändern (nur Gastgeber): Reihenfolge / No-Repeat. */
 export async function updateSettings(store, params) {
   const code = params.code

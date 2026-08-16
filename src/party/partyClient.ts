@@ -99,6 +99,11 @@ export async function updateSettings(
   return data.state as PartyState
 }
 
+export async function addSong(code: string, song: string): Promise<PartyState> {
+  const data = await call('songs', { code, song })
+  return data.state as PartyState
+}
+
 export async function spinRoom(code: string): Promise<PartyState> {
   const data = await call('spin', { code, deviceId: getDeviceId() })
   return data.state as PartyState

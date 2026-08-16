@@ -3119,3 +3119,46 @@ code {
   background: linear-gradient(100deg, rgba(124, 92, 255, 0.85), rgba(34, 211, 238, 0.7));
   box-shadow: 0 8px 26px rgba(124, 92, 255, 0.35);
 }
+
+/* Party: Song-Liste in der Lobby */
+.party-song-list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.party-song {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Party: Übergangs-/Handoff-Screen */
+.party-turn-screen {
+  gap: 16px;
+}
+.party-turn-kicker {
+  margin: 0;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+.party-turn-big {
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 3.4rem);
+  font-weight: 800;
+  background: linear-gradient(100deg, #a78bfa, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: singer-flash 1.6s var(--ease-out) both;
+}
+.party-turn-back {
+  margin-top: 6px;
+}
