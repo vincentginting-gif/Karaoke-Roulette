@@ -16,6 +16,8 @@ interface RouletteProps {
   surprise: boolean
   /** Vorgegebene Gewinner-Rarity (Party: synchron auf allen Geräten). Sonst lokal gewürfelt. */
   rarity?: string | null
+  /** Party: Name der Person, die singt – kurze Einblendung zu Beginn. */
+  singer?: string | null
   /** Wird aufgerufen, wenn die Animation vollständig gestoppt ist. */
   onComplete: () => void
 }
@@ -80,7 +82,7 @@ function rollWinnerRarity(): string {
  * wird (nicht aus Frame-Inkrementen), landet IMMER derselbe Song –
  * unabhängig von der Bildwiederholrate.
  */
-export function Roulette({ strip, winnerIndex, soundEnabled, surprise, rarity, onComplete }: RouletteProps) {
+export function Roulette({ strip, winnerIndex, soundEnabled, surprise, rarity, singer, onComplete }: RouletteProps) {
   const { t } = useI18n()
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
@@ -192,7 +194,11 @@ export function Roulette({ strip, winnerIndex, soundEnabled, surprise, rarity, o
 
   return (
     <section className="stage stage-center roulette fade-in">
-      <p className="roulette-hint">{surprise ? t('roulette.surprise') : t('roulette.which')}</p>
+      {singer ? (
+        <p className="roulette-singer">🎤 {t('party.singerUp', { name: singer })}</p>
+      ) : (
+        <p className="roulette-hint">{surprise ? t('roulette.surprise') : t('roulette.which')}</p>
+      )}
 
       <div className="roulette-viewport" ref={viewportRef}>
         {/* Fester Marker in der Mitte: eine saubere Linie mit bündigen Pfeilen */}

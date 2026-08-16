@@ -77,9 +77,11 @@ export function Result({ track, onAgain, onChangePlaylist, party }: ResultProps)
 
   return (
     <section className="stage stage-center result result-in">
-      <p className="result-kicker">
-        {party ? t('party.sings', { name: party.singer }) : t('result.kicker')}
-      </p>
+      {party ? (
+        <p className="result-singer-banner">{t('party.sings', { name: party.singer })}</p>
+      ) : (
+        <p className="result-kicker">{t('result.kicker')}</p>
+      )}
 
       <div className="result-cover-wrap glow-strong">
         <AlbumCover url={cover} alt={`${track.title} – ${track.artist}`} className="result-cover" />

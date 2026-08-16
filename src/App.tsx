@@ -1193,6 +1193,7 @@ export function App() {
         soundEnabled={soundEnabled}
         surprise={surpriseMode}
         rarity={partyMode ? winnerRarity : null}
+        singer={partyMode ? party.state?.event?.singer ?? null : null}
         onComplete={onRouletteComplete}
       />
     )

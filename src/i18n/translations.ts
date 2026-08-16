@@ -348,6 +348,7 @@ export const translations: Record<string, Entry> = {
   'party.joinHint': { de: 'Gib den Raum-Code ein, den du bekommen hast.', en: 'Enter the room code you were given.', ko: '받은 방 코드를 입력하세요.' },
   'party.joinBtn': { de: 'Beitreten', en: 'Join', ko: '참가' },
   'party.sings': { de: '🎤 {name} singt', en: '🎤 {name} sings', ko: '🎤 {name} 노래' },
+  'party.singerUp': { de: '{name} ist dran!', en: '{name} is up!', ko: '{name} 차례!' },
   'party.next': { de: 'Nächster dran', en: 'Next up', ko: '다음 차례' },
   'party.waitNext': { de: 'Warte, bis {name} weitergibt …', en: 'Waiting for {name} to pass on …', ko: '{name}이(가) 넘기기를 기다리는 중 …' },
   'party.err.disabled': { de: 'Der Party-Server ist nicht eingerichtet.', en: 'The party server is not set up.', ko: '파티 서버가 설정되지 않았습니다.' },
