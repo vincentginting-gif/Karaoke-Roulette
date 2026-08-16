@@ -5,8 +5,10 @@
 //  die Vercel-Integration automatisch setzt – NICHTS davon im Frontend.
 // ─────────────────────────────────────────────────────────────
 
-const URL = process.env.UPSTASH_REDIS_REST_URL
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+// Je nach Vercel-/Upstash-Integration heißen die Zugangsdaten unterschiedlich –
+// beide gängigen Varianten akzeptieren (Upstash-Marketplace bzw. Vercel-KV).
+const URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
+const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN
 
 /** Ist der Party-Server überhaupt eingerichtet? (sonst Feature aus) */
 export function isConfigured() {
