@@ -74,16 +74,24 @@ export function pickWinnerIndex(count, drawn, lastIndex, noRepeat, rng) {
   return { index, didReset }
 }
 
-/** Nächster Turn-Index: manuell = der Reihe nach, zufällig = anderer Spieler. */
-export function nextTurnIndex(order, turnIndex, n, rng) {
-  if (n <= 1) return 0
+/**
+ * Nächster Turn-Index.
+ *  - manuell: der Reihe nach.
+ *  - zufällig: irgendwer – aber MAX. 2× dieselbe Person hintereinander.
+ * `streak` = wie oft die aktuelle Person schon in Folge dran war.
+ * Gibt den neuen Index + die neue Streak zurück.
+ */
+export function nextTurnIndex(order, turnIndex, n, rng, streak = 1) {
+  if (n <= 1) return { index: 0, streak: 1 }
   if (order === 'random') {
-    let i = turnIndex
-    // Nicht denselben Spieler direkt noch mal.
-    while (i === turnIndex) i = Math.floor(rng() * n)
-    return i
+    let candidates = []
+    for (let i = 0; i < n; i++) candidates.push(i)
+    // Schon 2× in Folge -> diese Person diesmal ausschließen.
+    if (streak >= 2) candidates = candidates.filter((i) => i !== turnIndex)
+    const index = candidates[Math.floor(rng() * candidates.length)]
+    return { index, streak: index === turnIndex ? streak + 1 : 1 }
   }
-  return (turnIndex + 1) % n
+  return { index: (turnIndex + 1) % n, streak: 1 }
 }
 
 // ── Interne Lade-Helfer ──
@@ -153,7 +161,7 @@ export async function createRoom(store, params, opts = {}) {
     createdAt: now,
   }
   await store.set(kMeta(code), JSON.stringify(meta), TTL)
-  await saveTurn(store, code, { turnIndex: 0, seq: 0, event: null, drawn: [] })
+  await saveTurn(store, code, { turnIndex: 0, seq: 0, event: null, drawn: [], streak: 1 })
 
   // Anfangsnamen des Gastgeber-Geräts.
   const initial = Array.isArray(params.initialNames) ? params.initialNames : []
@@ -293,12 +301,19 @@ export async function nextTurn(store, params, opts = {}) {
   const isHost = params.hostSecret && params.hostSecret === meta.hostSecret
   if (!isHost && current.ownerDeviceId !== deviceId) throw httpError(403, 'not_your_turn')
 
-  const nextIndex = nextTurnIndex(meta.order, turn.turnIndex, players.length, rng)
+  const { index: nextIndex, streak } = nextTurnIndex(
+    meta.order,
+    turn.turnIndex,
+    players.length,
+    rng,
+    turn.streak || 1,
+  )
   await saveTurn(store, code, {
     turnIndex: nextIndex,
     seq: (turn.seq || 0) + 1,
     event: turn.event, // letzter Spin bleibt fürs Log; Clients triggern per event.seq
     drawn: turn.drawn || [],
+    streak,
   })
   await touch(store, code)
   return getState(store, code)

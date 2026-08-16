@@ -3124,18 +3124,40 @@ code {
 .party-song-list {
   list-style: none;
   margin: 0 0 10px;
-  padding: 0;
+  padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-height: 160px;
+  gap: 2px;
+  max-height: min(46vh, 340px);
   overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.12);
 }
 .party-song {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   font-size: 0.9rem;
-  color: var(--text-dim);
-  padding: 4px 2px;
-  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.party-song:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.03);
+}
+.party-song-num {
+  flex: none;
+  min-width: 1.6em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+.party-song-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Party: Übergangs-/Handoff-Screen */
@@ -3157,7 +3179,24 @@ code {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: singer-flash 1.6s var(--ease-out) both;
+}
+/* Während der Auslosung: leicht gedimmt & unscharf, schnelle Namen. */
+.party-turn-big.is-shuffling {
+  opacity: 0.7;
+  filter: blur(0.6px);
+  transform: scale(0.98);
+}
+/* Landung auf dem Sänger: kurzer Pop. */
+.party-turn-big.is-revealed {
+  animation: turn-pop 0.5s var(--ease-out) both;
+}
+@keyframes turn-pop {
+  0% { transform: scale(0.8); opacity: 0.4; }
+  55% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .party-turn-big.is-revealed { animation: none; }
 }
 .party-turn-back {
   margin-top: 6px;

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n/i18n'
 import type { PartyState, TurnOrder } from '../party/types'
 import { Logo } from './Logo'
@@ -163,9 +163,10 @@ export function PartyLobby({
           🎵 {t('party.songs')} ({state.meta.songs.length})
         </h3>
         <ul className="party-song-list">
-          {state.meta.songs.slice(-6).map((s, i) => (
+          {state.meta.songs.map((s, i) => (
             <li key={`${s}-${i}`} className="party-song">
-              {s}
+              <span className="party-song-num">{i + 1}</span>
+              <span className="party-song-title">{s}</span>
             </li>
           ))}
         </ul>
@@ -228,6 +229,8 @@ export function PartyLobby({
 
 interface PartyTurnProps {
   singer: string
+  /** Alle Namen (für die Auslos-Animation). */
+  names: string[]
   isMyTurn: boolean
   ready: boolean
   onSpin: () => void
@@ -235,26 +238,54 @@ interface PartyTurnProps {
 }
 
 /**
- * Übergangs-/Handoff-Screen nach „Nächster dran": zeigt groß, wer jetzt
- * dran ist, mit dem Spin-Button (bzw. Warten, wenn ein anderes Gerät dran ist).
+ * Übergangs-/Handoff-Screen nach „Nächster dran": lost per kurzer Animation
+ * die Namen durch und landet auf der Person, die jetzt dran ist. Danach der
+ * Spin-Button (bzw. Warten, wenn ein anderes Gerät dran ist).
  */
-export function PartyTurn({ singer, isMyTurn, ready, onSpin, onBackToLobby }: PartyTurnProps) {
+export function PartyTurn({ singer, names, isMyTurn, ready, onSpin, onBackToLobby }: PartyTurnProps) {
   const { t } = useI18n()
+  const [display, setDisplay] = useState(singer)
+  const [revealed, setRevealed] = useState(false)
+
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce || names.length < 2) {
+      setDisplay(singer)
+      setRevealed(true)
+      return
+    }
+    // Namen durchmischen (~1s), dann auf dem Sänger landen.
+    setRevealed(false)
+    const spin = window.setInterval(() => {
+      setDisplay(names[Math.floor(Math.random() * names.length)])
+    }, 80)
+    const stop = window.setTimeout(() => {
+      window.clearInterval(spin)
+      setDisplay(singer)
+      setRevealed(true)
+    }, 1000)
+    return () => {
+      window.clearInterval(spin)
+      window.clearTimeout(stop)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [singer, names.join('|')])
+
   return (
     <section className="stage stage-center fade-in party-turn-screen">
       <p className="party-turn-kicker">{t('party.nextTurn')}</p>
-      <p className="party-turn-big">🎤 {singer}</p>
+      <p className={`party-turn-big${revealed ? ' is-revealed' : ' is-shuffling'}`}>🎤 {display}</p>
       {isMyTurn ? (
         <button
           className="btn btn-primary btn-spin glow-strong party-spin"
           onClick={onSpin}
-          disabled={!ready}
+          disabled={!ready || !revealed}
         >
           <DiceIcon className="btn-icon" />
           {t('party.spin')}
         </button>
       ) : (
-        <p className="party-wait">{t('party.waitTurn', { name: singer })}</p>
+        <p className="party-wait">{revealed ? t('party.waitTurn', { name: singer }) : '…'}</p>
       )}
       <button className="btn btn-ghost party-turn-back" onClick={onBackToLobby}>
         {t('party.back')}

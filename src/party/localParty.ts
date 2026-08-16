@@ -52,23 +52,33 @@ function pickWinnerIndex(
   return { index: candidates[Math.floor(Math.random() * candidates.length)], didReset }
 }
 
-function nextIndex(order: TurnOrder, turnIndex: number, n: number): number {
-  if (n <= 1) return 0
+// Zufällig, aber max. 2× dieselbe Person hintereinander. Gibt Index + Streak.
+function nextIndex(
+  order: TurnOrder,
+  turnIndex: number,
+  n: number,
+  streak: number,
+): { index: number; streak: number } {
+  if (n <= 1) return { index: 0, streak: 1 }
   if (order === 'random') {
-    let i = turnIndex
-    while (i === turnIndex) i = Math.floor(Math.random() * n)
-    return i
+    let candidates: number[] = []
+    for (let i = 0; i < n; i++) candidates.push(i)
+    if (streak >= 2) candidates = candidates.filter((i) => i !== turnIndex)
+    const index = candidates[Math.floor(Math.random() * candidates.length)]
+    return { index, streak: index === turnIndex ? streak + 1 : 1 }
   }
-  return (turnIndex + 1) % n
+  return { index: (turnIndex + 1) % n, streak: 1 }
 }
 
 /** Gleiche Schnittstelle wie `useParty`, aber ohne Netzwerk. */
 export function useLocalParty() {
   const [state, setState] = useState<PartyState | null>(null)
   const drawnRef = useRef<number[]>([])
+  const streakRef = useRef(1)
 
   const create = useCallback((name: string, songs: string[]) => {
     drawnRef.current = []
+    streakRef.current = 1
     setState({
       code: 'LOKAL',
       meta: { name: name || 'Party', songs, order: 'manual', noRepeat: true },
@@ -139,12 +149,15 @@ export function useLocalParty() {
   const next = useCallback(async () => {
     setState((s) => {
       if (!s || s.players.length === 0) return s
-      return { ...s, turnIndex: nextIndex(s.meta.order, s.turnIndex, s.players.length), seq: s.seq + 1 }
+      const { index, streak } = nextIndex(s.meta.order, s.turnIndex, s.players.length, streakRef.current)
+      streakRef.current = streak
+      return { ...s, turnIndex: index, seq: s.seq + 1 }
     })
   }, [])
 
   const leave = useCallback(() => {
     drawnRef.current = []
+    streakRef.current = 1
     setState(null)
   }, [])
 

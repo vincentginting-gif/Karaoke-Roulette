@@ -46,13 +46,21 @@ async function run() {
 
   // ── nextTurnIndex ──
   {
-    ok(nextTurnIndex('manual', 0, 3, Math.random) === 1, 'manual 0->1')
-    ok(nextTurnIndex('manual', 2, 3, Math.random) === 0, 'manual wrap 2->0')
+    ok(nextTurnIndex('manual', 0, 3, Math.random).index === 1, 'manual 0->1')
+    ok(nextTurnIndex('manual', 2, 3, Math.random).index === 0, 'manual wrap 2->0')
+    // Zufällig: max. 2× dieselbe Person hintereinander.
     const rng = lcg(7)
-    for (let i = 0; i < 20; i++) {
-      const n = nextTurnIndex('random', 1, 4, rng)
-      ok(n !== 1 && n >= 0 && n < 4, `random meidet aktuellen (${n})`)
+    let ti = 0
+    let streak = 1
+    let maxStreak = 1
+    for (let i = 0; i < 300; i++) {
+      const r = nextTurnIndex('random', ti, 3, rng, streak)
+      ok(r.index >= 0 && r.index < 3, 'random im gültigen Bereich')
+      maxStreak = Math.max(maxStreak, r.streak)
+      ti = r.index
+      streak = r.streak
     }
+    ok(maxStreak === 2, `zufällig: erlaubt bis genau 2× hintereinander (maxStreak=${maxStreak})`)
   }
 
   // ── Vollständiger Ablauf ──

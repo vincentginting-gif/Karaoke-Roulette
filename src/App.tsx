@@ -1101,6 +1101,7 @@ export function App() {
     content = (
       <PartyTurn
         singer={partyCurrent?.name ?? '—'}
+        names={party.state.players.map((p) => p.name)}
         isMyTurn={isMyTurn}
         ready={pool.length > 0}
         onSpin={party.spin}
