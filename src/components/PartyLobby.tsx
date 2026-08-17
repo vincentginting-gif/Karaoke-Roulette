@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n/i18n'
 import type { PartyState, TurnOrder } from '../party/types'
+import { playStop, playTick, unlockAudio } from '../roulette/audio'
 import { Logo } from './Logo'
 import { DiceIcon } from './icons'
 
@@ -233,60 +234,92 @@ interface PartyTurnProps {
   names: string[]
   isMyTurn: boolean
   ready: boolean
+  soundEnabled: boolean
   onSpin: () => void
   onBackToLobby: () => void
 }
 
 /**
- * Übergangs-/Handoff-Screen nach „Nächster dran": lost per kurzer Animation
- * die Namen durch und landet auf der Person, die jetzt dran ist. Danach der
- * Spin-Button (bzw. Warten, wenn ein anderes Gerät dran ist).
+ * Übergangs-/Handoff-Screen nach „Nächster dran": lost mit Ticks (verlangsamend)
+ * die Namen durch und landet mit Reveal-Sound auf der Person, die dran ist.
  */
-export function PartyTurn({ singer, names, isMyTurn, ready, onSpin, onBackToLobby }: PartyTurnProps) {
+export function PartyTurn({
+  singer,
+  names,
+  isMyTurn,
+  ready,
+  soundEnabled,
+  onSpin,
+  onBackToLobby,
+}: PartyTurnProps) {
   const { t } = useI18n()
   const [display, setDisplay] = useState(singer)
   const [revealed, setRevealed] = useState(false)
+  const timerRef = useRef<number | null>(null)
 
   useEffect(() => {
+    unlockAudio()
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce || names.length < 2) {
       setDisplay(singer)
       setRevealed(true)
+      if (soundEnabled) playStop()
       return
     }
-    // Namen durchmischen (~1s), dann auf dem Sänger landen.
     setRevealed(false)
-    const spin = window.setInterval(() => {
-      setDisplay(names[Math.floor(Math.random() * names.length)])
-    }, 80)
-    const stop = window.setTimeout(() => {
-      window.clearInterval(spin)
-      setDisplay(singer)
-      setRevealed(true)
-    }, 1000)
+    // Verlangsamende Ziehung (Slot-Machine-Gefühl) + Tick pro Schritt.
+    let delay = 55
+    let elapsed = 0
+    let last = -1
+    const tickOnce = () => {
+      let idx = Math.floor(Math.random() * names.length)
+      if (names.length > 1 && idx === last) idx = (idx + 1) % names.length
+      last = idx
+      setDisplay(names[idx])
+      if (soundEnabled) playTick()
+      elapsed += delay
+      delay = Math.min(260, delay * 1.16)
+      if (elapsed < 1250) {
+        timerRef.current = window.setTimeout(tickOnce, delay)
+      } else {
+        setDisplay(singer)
+        setRevealed(true)
+        if (soundEnabled) playStop()
+      }
+    }
+    timerRef.current = window.setTimeout(tickOnce, delay)
     return () => {
-      window.clearInterval(spin)
-      window.clearTimeout(stop)
+      if (timerRef.current) window.clearTimeout(timerRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [singer, names.join('|')])
 
   return (
     <section className="stage stage-center fade-in party-turn-screen">
-      <p className="party-turn-kicker">{t('party.nextTurn')}</p>
-      <p className={`party-turn-big${revealed ? ' is-revealed' : ' is-shuffling'}`}>🎤 {display}</p>
-      {isMyTurn ? (
-        <button
-          className="btn btn-primary btn-spin glow-strong party-spin"
-          onClick={onSpin}
-          disabled={!ready || !revealed}
-        >
-          <DiceIcon className="btn-icon" />
-          {t('party.spin')}
-        </button>
-      ) : (
-        <p className="party-wait">{revealed ? t('party.waitTurn', { name: singer }) : '…'}</p>
-      )}
+      <div className={`party-turn-card${revealed ? ' is-revealed' : ''}`}>
+        <p className="party-turn-kicker">🎶 {t('party.nextTurn')}</p>
+        <div className={`party-turn-slot${revealed ? ' is-revealed' : ' is-shuffling'}`}>
+          <span className="party-turn-mic" aria-hidden="true">
+            🎤
+          </span>
+          <span className="party-turn-name-text">{display}</span>
+        </div>
+        {isMyTurn ? (
+          <button
+            className="btn btn-primary btn-spin glow-strong party-spin"
+            onClick={() => {
+              unlockAudio()
+              onSpin()
+            }}
+            disabled={!ready || !revealed}
+          >
+            <DiceIcon className="btn-icon" />
+            {t('party.spin')}
+          </button>
+        ) : (
+          <p className="party-wait">{revealed ? t('party.waitTurn', { name: singer }) : '…'}</p>
+        )}
+      </div>
       <button className="btn btn-ghost party-turn-back" onClick={onBackToLobby}>
         {t('party.back')}
       </button>

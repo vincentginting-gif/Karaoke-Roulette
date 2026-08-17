@@ -1104,6 +1104,7 @@ export function App() {
         names={party.state.players.map((p) => p.name)}
         isMyTurn={isMyTurn}
         ready={pool.length > 0}
+        soundEnabled={soundEnabled}
         onSpin={party.spin}
         onBackToLobby={backToLobby}
       />

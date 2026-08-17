@@ -3162,41 +3162,107 @@ code {
 
 /* Party: Übergangs-/Handoff-Screen */
 .party-turn-screen {
-  gap: 16px;
+  gap: 18px;
+}
+.party-turn-card {
+  position: relative;
+  width: min(460px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 34px 24px 30px;
+  border-radius: 24px;
+  border: 1px solid var(--border-strong);
+  background:
+    radial-gradient(130% 90% at 50% 0%, rgba(124, 92, 255, 0.22), transparent 62%),
+    linear-gradient(180deg, var(--surface-hover), var(--surface));
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+/* Sanft rotierender Lichtkegel hinter dem Namen (nur auf diesem Screen). */
+.party-turn-card::before {
+  content: '';
+  position: absolute;
+  inset: -40% -10% auto -10%;
+  height: 70%;
+  background: conic-gradient(from 0deg, transparent, rgba(124, 92, 255, 0.16), transparent 40%);
+  filter: blur(24px);
+  animation: turn-sweep 5.5s linear infinite;
+  pointer-events: none;
+}
+.party-turn-card.is-revealed {
+  animation: turn-card-pop 0.45s var(--ease-out) both;
 }
 .party-turn-kicker {
   margin: 0;
   font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: var(--text-faint);
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+  z-index: 1;
 }
-.party-turn-big {
-  margin: 0;
-  font-size: clamp(2rem, 9vw, 3.4rem);
+.party-turn-slot {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 22px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transition: box-shadow 0.3s, border-color 0.3s;
+}
+.party-turn-mic {
+  font-size: clamp(1.8rem, 7vw, 2.6rem);
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+}
+.party-turn-name-text {
+  font-size: clamp(1.9rem, 8vw, 3rem);
   font-weight: 800;
-  background: linear-gradient(100deg, #a78bfa, #22d3ee);
+  line-height: 1.05;
+  text-align: center;
+  background: linear-gradient(100deg, #c4b5fd, #67e8f9);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
-/* Während der Auslosung: leicht gedimmt & unscharf, schnelle Namen. */
-.party-turn-big.is-shuffling {
-  opacity: 0.7;
-  filter: blur(0.6px);
-  transform: scale(0.98);
+.party-turn-slot.is-shuffling .party-turn-name-text {
+  opacity: 0.72;
+  filter: blur(0.5px);
 }
-/* Landung auf dem Sänger: kurzer Pop. */
-.party-turn-big.is-revealed {
+.party-turn-slot.is-revealed {
+  border-color: rgba(124, 92, 255, 0.55);
+  box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.4), 0 0 34px rgba(124, 92, 255, 0.35);
+}
+.party-turn-slot.is-revealed .party-turn-name-text {
   animation: turn-pop 0.5s var(--ease-out) both;
 }
+.party-turn-card .party-spin {
+  z-index: 1;
+  min-width: 200px;
+}
 @keyframes turn-pop {
-  0% { transform: scale(0.8); opacity: 0.4; }
+  0% { transform: scale(0.72); opacity: 0.3; }
   55% { transform: scale(1.12); opacity: 1; }
   100% { transform: scale(1); }
 }
+@keyframes turn-card-pop {
+  0% { transform: scale(0.96); }
+  55% { transform: scale(1.015); }
+  100% { transform: scale(1); }
+}
+@keyframes turn-sweep {
+  to { transform: rotate(360deg); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .party-turn-big.is-revealed { animation: none; }
+  .party-turn-card::before { animation: none; }
+  .party-turn-card.is-revealed,
+  .party-turn-slot.is-revealed .party-turn-name-text { animation: none; }
 }
 .party-turn-back {
   margin-top: 6px;
